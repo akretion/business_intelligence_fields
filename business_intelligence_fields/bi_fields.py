@@ -43,12 +43,29 @@ class account_invoice_line(osv.osv):
                     'price_subtotal_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_subtotal, context=context),
                     'price_unit_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_unit, context=context)
                 }
+        #print "result =", result
         return result
 
+    def _get_invoice_lines_from_invoices(self, cr, uid, ids, context=None):
+        return self.pool.get('account.invoice.line').search(cr, uid, [('invoice_id', 'in', ids)], context=context)
 
     _columns = {
-        'price_subtotal_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyconvert', type='float', digits=(16, int(config['price_accuracy'])), string='Subtotal in company currency'),
-        'price_unit_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyconvert', type='float', digits=(16, int(config['price_accuracy'])), string='Unit price in company currency'),
+        'price_subtotal_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyconvert', type='float', digits=(16, int(config['price_accuracy'])), string='Subtotal in company currency', store={
+            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_subtotal'], 10),
+            'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
+            }),
+        # In the trigger object for invalidation of these function fields,
+        # why do I have accout.invoice -> move_id, and not 'res.currency.rate' ?
+        # Answer : because, in the accounting entries, the computation of currency conversion
+        # takes place when the accountings entries are created, i.e. when the invoice goes
+        # from 'draft' to 'open'. It is not re-computed every time a new currency rate is
+        # entered. So we want to compute the currency conversion simultaneously with the
+        # accounting entries. That's why we trigger on move_id field on account.invoice.
+        'price_unit_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyconvert', type='float', digits=(16, int(config['price_accuracy'])), string='Unit price in company currency', store={
+            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit'], 10),
+            'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
+
+            }),
     }
 
 account_invoice_line()
