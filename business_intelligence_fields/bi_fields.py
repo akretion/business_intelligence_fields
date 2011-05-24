@@ -92,24 +92,25 @@ class account_invoice(osv.osv):
         print "result =", result
         return result
 
-    def _get_invoice_line(self, cr, uid, ids, context=None):
-        print "SELF =", self
-        return super(account_invoice_line, self)._get_invoice_line(cr, uid, ids, context=context)
+    def _2get_invoice_line(self, cr, uid, ids, context=None):
+        return self.pool.get('account.invoice')._get_invoice_line(cr, uid, ids, context=context)
 
-    def _get_invoice_tax(self, cr, uid, ids, context=None):
-        print "SELF =", self
-        return super(account_invoice_tax, self)._get_invoice_tax(cr, uid, ids, context=context)
+#    def _get_invoice_line(self, cr, uid, ids, context=None):
+#        return super(account_invoice, self.pool.get('account.invoice'))._get_invoice_line(cr, uid, ids, context=context)
+
+    def _2get_invoice_tax(self, cr, uid, ids, context=None):
+        return self.pool.get('account.invoice')._get_invoice_tax(cr, uid, ids, context=context)
 
     _columns = {
         'amount_untaxed_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits=(16, int(config['price_accuracy'])), string='Untaxed in company currency', store={
             'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line'], 20),
-            'account.invoice.tax': (_get_invoice_tax, None, 20),
-            'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
+            'account.invoice.tax': (_2get_invoice_tax, None, 20),
+            'account.invoice.line': (_2get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
             }),
         'amount_total_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits=(16, int(config['price_accuracy'])), string='Total in company currency', store={
             'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line'], 20),
-            'account.invoice.tax': (_get_invoice_tax, None, 20),
-            'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
+            'account.invoice.tax': (_2get_invoice_tax, None, 20),
+            'account.invoice.line': (_2get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
             }),
     }
 
