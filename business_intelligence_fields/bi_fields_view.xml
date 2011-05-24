@@ -9,7 +9,7 @@
 <openerp>
 <data>
 
-<!-- Add field on product.product view -->
+<!-- Add fields on invoice line view -->
 <record id="bi_fields_invoice_line_form" model="ir.ui.view">
     <field name="name">bi.fields.invoice.line.form</field>
     <field name="model">account.invoice.line</field>
@@ -21,6 +21,19 @@
                 <field name="price_subtotal_company_currency" />
             </page>
         </page>
+    </field>
+</record>
+
+<!-- Add fields on invoice view -->
+<record id="bi_fields_invoice_form" model="ir.ui.view">
+    <field name="name">bi.fields.invoice.form</field>
+    <field name="model">account.invoice</field>
+    <field name="inherit_id" ref="account.invoice_form" />
+    <field name="arch" type="xml">
+        <field name="move_id" position="after">
+            <field name="amount_untaxed_company_currency" />
+            <field name="amount_total_company_currency" />
+        </field>
     </field>
 </record>
 
