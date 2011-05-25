@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    Business Intelligence fields module for OpenERP
+#    bi_invoice_company_currency module for OpenERP
 #    Copyright (C) 2011 Akretion (http://www.akretion.com). All Rights Reserved
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
@@ -22,17 +22,17 @@
 
 
 {
-    'name': 'Business intelligence fields',
-    'version': '0.1',
+    'name': 'Business intelligence - Invoice in company currency',
+    'version': '0.2',
     'category': 'Generic Modules/Others',
     'license': 'AGPL-3',
-    'description': """This module adds some fields required to do business intelligence.
-Example of such fields : add the amount in company currency on the invoice line.""",
+    'description': """This module adds some fields required to do business intelligence :
+it adds the amount in company currency on the invoice and invoice line.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['account'],
     'init_xml': [],
-    'update_xml': ['bi_fields_view.xml'],
+    'update_xml': ['invoice_view.xml'],
     'demo_xml': [],
     'installable': True,
     'active': False,

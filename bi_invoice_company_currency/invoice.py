@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    Business Intelligence fields module for OpenERP
+#    bi_invoice_company_currency module for OpenERP
 #    Copyright (C) 2011 Akretion (http://www.akretion.com/) All Rights Reserved
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
