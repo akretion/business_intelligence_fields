@@ -29,44 +29,79 @@ class account_invoice(osv.osv):
     def _compute_bi_payment(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for inv in self.browse(cr, uid, ids, context=context):
+
+            # To test the down payment algo, you have to consider at least these scenarios :
+            # Scenario 1 :
+            # 16/05 : payment of 9000 €
+            # 17/05 : invoice 1 of 8000 €  => DP of I1 = 8000 €
+            # 18/05 : invoice 2 of 2000 €  => DP of I1 = 8000 €, DP of I2 = 1000 €
+            # 19/05 : final payment of 1000 € => no change in DP
+
+            # Scenario 2
+            # 16/05 : invoice 1 of 3000 €
+            # 17/05 : invoice 2 of 2000 €
+            # 18/05 : payment of 5000 € => all down payment must stay at 0
+            # (the risk is that DP of invoice 2 becomes negative)
+
+            # Scenario 3 :
+            # 16/05 : refund of -1000 € (to cancel an invoice that was already paid)
+            # 17/05 : invoice 1 of 3000 € => DP of I1 = 0
+            # 18/05 : payment of 2000 €
+
             date_final_payment_to_write = False
             max_date_all_journals = False
             max_date_cash_journal = False
             total_down_pay_to_write = 0.0
             total_down_pay = 0.0
-            for payment in inv.payment_ids:
-                if payment.date and payment.date > max_date_all_journals:
-                    max_date_all_journals = payment.date
-                if payment.date and payment.journal_id and payment.journal_id.type == 'cash' and payment.date > max_date_cash_journal:
-                    max_date_cash_journal = payment.date
-
-                if payment.date < inv.date_invoice:
-                    total_down_pay += payment.credit - payment.debit
-
+            # no final payment date nor down payment for refunds
             if inv.type in ('in_invoice', 'out_invoice'):
+                for payment in inv.payment_ids:
+                    if inv.reconciled:
+                        if payment.date and payment.date > max_date_all_journals:
+                            max_date_all_journals = payment.date
+                        if payment.date and payment.journal_id and payment.journal_id.type == 'cash' and payment.date > max_date_cash_journal:
+                            max_date_cash_journal = payment.date
+
+                    if payment.date <= inv.date_invoice:
+                        if payment.journal_id and payment.journal_id.type == 'cash':
+                            total_down_pay += payment.credit
+                        elif payment.journal_id and payment.journal_id.type == 'sale':
+                            total_down_pay -= payment.debit
+
+                # We have a final payment date only when the invoice if reconciled
                 if inv.reconciled:
+                    # If we have at least one pay line in cash journal, we take the max
+                    # date of the payment lines in cash journal
                     if max_date_cash_journal:
                         date_final_payment_to_write = max_date_cash_journal
+                    # Otherwise, we take the max date of all the payment lines
                     elif max_date_all_journals:
                         date_final_payment_to_write = max_date_all_journals
 
-                total_down_pay_to_write = total_down_pay
+                if inv.currency_id == inv.company_id.currency_id:
+                    amount_total_company_currency = inv.amount_total
+                else:
+                    amount_total_company_currency = self.pool.get('res.currency').compute(cr, uid, inv.currency_id.id, inv.company_id.currency_id.id, inv.amount_total, context=context)
+                # No negative down payment
+                if total_down_pay < 0:
+                    total_down_pay_to_write = 0.0
+                # Limit down payment to the total amount of invoice
+                elif total_down_pay > amount_total_company_currency:
+                    total_down_pay_to_write = amount_total_company_currency
+                else:
+                    total_down_pay_to_write = total_down_pay
 
 
             result[inv.id] = {
                     'date_final_payment': date_final_payment_to_write,
                     'total_down_payment_company_currency': total_down_pay_to_write,
             }
-        print "result =", result
+        #print "result =", result
         return result
 
-    def _bi_get_invoice_line(self, cr, uid, ids, context=None):
-        return self.pool.get('account.invoice')._get_invoice_line(cr, uid, ids, context=context)
-
-    def _bi_get_invoice_tax(self, cr, uid, ids, context=None):
-        return self.pool.get('account.invoice')._get_invoice_tax(cr, uid, ids, context=context)
-
     def _bi_get_invoice_from_line(self, cr, uid, ids, context=None):
+        #print "_bi_get_invoice_from_line SENDING ALL IDS"
+        #return self.pool.get('account.invoice').search(cr, uid, [], context=context)
         return self.pool.get('account.invoice')._get_invoice_from_line(cr, uid, ids, context=context)
 
     def _bi_get_invoice_from_reconcile(self, cr, uid, ids, context=None):
