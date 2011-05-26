@@ -21,6 +21,7 @@
 ##############################################################################
 
 from osv import osv, fields
+from datetime import datetime, timedelta
 from tools import config
 
 class account_invoice(osv.osv):
@@ -51,6 +52,8 @@ class account_invoice(osv.osv):
             date_final_payment_to_write = False
             max_date_all_journals = False
             max_date_cash_journal = False
+            payment_delay_days_to_write = False
+            overdue_delay_days_to_write = False
             total_down_pay_to_write = 0.0
             total_down_pay = 0.0
             # no final payment date nor down payment for refunds
@@ -78,6 +81,21 @@ class account_invoice(osv.osv):
                     elif max_date_all_journals:
                         date_final_payment_to_write = max_date_all_journals
 
+                    # Computing payment delays
+                    final_date_datetime = datetime.strptime(date_final_payment_to_write, '%Y-%m-%d')
+                    if not inv.date_due or date_final_payment_to_write <= inv.date_due:
+                        overdue_delay_days_to_write = 0
+                    else:
+                        due_date_datetime = datetime.strptime(inv.date_due, '%Y-%m-%d')
+                        overdue_delay_days_to_write = (final_date_datetime - due_date_datetime).days
+
+                    if date_final_payment_to_write <= inv.date_invoice:
+                        payment_delay_days_to_write = 0
+                    else:
+                        invoice_date_datetime = datetime.strptime(inv.date_invoice, '%Y-%m-%d')
+                        payment_delay_days_to_write = (final_date_datetime - invoice_date_datetime).days
+
+
                 if inv.currency_id == inv.company_id.currency_id:
                     amount_total_company_currency = inv.amount_total
                 else:
@@ -94,6 +112,8 @@ class account_invoice(osv.osv):
 
             result[inv.id] = {
                     'date_final_payment': date_final_payment_to_write,
+                    'overdue_delay_days': overdue_delay_days_to_write,
+                    'payment_delay_days': payment_delay_days_to_write,
                     'total_down_payment_company_currency': total_down_pay_to_write,
             }
         #print "result =", result
@@ -109,6 +129,14 @@ class account_invoice(osv.osv):
 
     _columns = {
         'date_final_payment': fields.function(_compute_bi_payment, method=True, multi='bipay', type='date', string='Final payment date', store={
+            'account.move.line': (_bi_get_invoice_from_line, None, 50),
+            'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+            }),
+        'payment_delay_days': fields.function(_compute_bi_payment, method=True, multi='bipay', type='integer', string='Payment delay in days', store={
+            'account.move.line': (_bi_get_invoice_from_line, None, 50),
+            'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+            }),
+        'overdue_delay_days': fields.function(_compute_bi_payment, method=True, multi='bipay', type='integer', string='Overdue delay in days', store={
             'account.move.line': (_bi_get_invoice_from_line, None, 50),
             'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
             }),

@@ -16,8 +16,10 @@
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
         <field name="payment_ids" position="before">
-            <field name="date_final_payment" />
             <field name="total_down_payment_company_currency" />
+            <field name="date_final_payment" />
+            <field name="payment_delay_days" />
+            <field name="overdue_delay_days" />
         </field>
     </field>
 </record>
