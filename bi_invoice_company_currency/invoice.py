@@ -29,19 +29,26 @@ class account_invoice_line(osv.osv):
     def _compute_amount_in_company_currency(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for inv_line in self.browse(cr, uid, ids, context=context):
-            if inv_line.invoice_id.currency_id == inv_line.invoice_id.company_id.currency_id:
+            if inv_line.invoice_id and inv_line.invoice_id.currency_id == inv_line.invoice_id.company_id.currency_id:
                 # No currency conversion required
                 result[inv_line.id] = {
                     'price_subtotal_company_currency': inv_line.price_subtotal,
                     'price_unit_company_currency': inv_line.price_unit,
                 }
-            else:
+            elif inv_line.invoice_id:
                 # Convert on the date of the invoice
                 if inv_line.invoice_id.date_invoice:
                     context['date'] = inv_line.invoice_id.date_invoice
                 result[inv_line.id] = {
                     'price_subtotal_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_subtotal, context=context),
                     'price_unit_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_unit, context=context)
+                }
+            else: # when we have shipping policy = shipping & manual invoice,
+            # the invoice object is created after the invoice line object
+            # so inv_line.invoice_id is False on the first execution of the fonction
+                result[inv_line.id] = {
+                    'price_subtotal_company_currency': False,
+                    'price_unit_company_currency': False,
                 }
         #print "result =", result
         return result
@@ -51,7 +58,7 @@ class account_invoice_line(osv.osv):
 
     _columns = {
         'price_subtotal_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits=(16, int(config['price_accuracy'])), string='Subtotal in company currency', store={
-            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit', 'quantity', 'discount'], 10),
+            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit', 'quantity', 'discount', 'invoice_id'], 10),
             'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
             }),
         # In the trigger object for invalidation of these function fields,
@@ -62,7 +69,7 @@ class account_invoice_line(osv.osv):
         # entered. So we want to compute the currency conversion simultaneously with the
         # accounting entries. That's why we trigger on move_id field on account.invoice.
         'price_unit_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits=(16, int(config['price_accuracy'])), string='Unit price in company currency', store={
-            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit'], 10),
+            'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit', 'invoice_id'], 10),
             'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
             }),
     }
