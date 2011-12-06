@@ -22,6 +22,7 @@
 
 from osv import osv, fields
 from tools import config
+import decimal_precision as dp
 
 class account_invoice_line(osv.osv):
     _inherit = "account.invoice.line"
@@ -57,7 +58,7 @@ class account_invoice_line(osv.osv):
         return self.pool.get('account.invoice.line').search(cr, uid, [('invoice_id', 'in', ids)], context=context)
 
     _columns = {
-        'price_subtotal_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits=(16, int(config['price_accuracy'])), string='Subtotal in company currency', store={
+        'price_subtotal_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits_compute=dp.get_precision('Account'), string='Subtotal in company currency', store={
             'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit', 'quantity', 'discount', 'invoice_id'], 10),
             'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
             }),
@@ -68,7 +69,7 @@ class account_invoice_line(osv.osv):
         # from 'draft' to 'open'. It is not re-computed every time a new currency rate is
         # entered. So we want to compute the currency conversion simultaneously with the
         # accounting entries. That's why we trigger on move_id field on account.invoice.
-        'price_unit_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits=(16, int(config['price_accuracy'])), string='Unit price in company currency', store={
+        'price_unit_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvline', type='float', digits_compute=dp.get_precision('Account'), string='Unit price in company currency', store={
             'account.invoice.line': (lambda self, cr, uid, ids, c={}: ids, ['price_unit', 'invoice_id'], 10),
             'account.invoice': (_get_invoice_lines_from_invoices, ['move_id'], 20),
             }),
@@ -106,12 +107,12 @@ class account_invoice(osv.osv):
         return self.pool.get('account.invoice')._get_invoice_tax(cr, uid, ids, context=context)
 
     _columns = {
-        'amount_untaxed_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits=(16, int(config['price_accuracy'])), string='Untaxed in company currency', store={
+        'amount_untaxed_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits_compute=dp.get_precision('Account'), string='Untaxed in company currency', store={
             'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line'], 20),
             'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
             'account.invoice.line': (_bi_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
             }),
-        'amount_total_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits=(16, int(config['price_accuracy'])), string='Total in company currency', store={
+        'amount_total_company_currency': fields.function(_compute_amount_in_company_currency, method=True, multi='currencyinvoice', type='float', digits_compute=dp.get_precision('Account'), string='Total in company currency', store={
             'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line'], 20),
             'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
             'account.invoice.line': (_bi_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),

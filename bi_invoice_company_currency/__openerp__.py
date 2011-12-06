@@ -26,6 +26,7 @@
     'version': '0.2',
     'category': 'Generic Modules/Others',
     'license': 'AGPL-3',
+    'complexity': 'easy',
     'description': """This module adds some fields required to do business intelligence :
 it adds the amount in company currency on the invoice and invoice line.""",
     'author': 'Akretion',

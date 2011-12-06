@@ -23,6 +23,7 @@
 from osv import osv, fields
 from datetime import datetime, timedelta
 from tools import config
+import decimal_precision as dp
 
 class account_invoice(osv.osv):
     _inherit = "account.invoice"
@@ -140,7 +141,7 @@ class account_invoice(osv.osv):
             'account.move.line': (_bi_get_invoice_from_line, None, 50),
             'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
             }),
-        'total_down_payment_company_currency': fields.function(_compute_bi_payment, method=True, multi='bipay', type='float', digits=(16, int(config['price_accuracy'])), string='Total down payment in company currency', store={
+        'total_down_payment_company_currency': fields.function(_compute_bi_payment, method=True, multi='bipay', type='float', digits_compute=dp.get_precision('Account'), string='Total down payment in company currency', store={
             'account.move.line': (_bi_get_invoice_from_line, None, 50),
             'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
             }),
