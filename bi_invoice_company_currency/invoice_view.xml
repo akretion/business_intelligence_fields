@@ -15,12 +15,13 @@
     <field name="model">account.invoice.line</field>
     <field name="inherit_id" ref="account.view_invoice_line_form" />
     <field name="arch" type="xml">
-        <page string="Notes" position="after">
-            <page string="Converted amounts">
-                <field name="price_unit_company_currency" />
-                <field name="price_subtotal_company_currency" />
-            </page>
-        </page>
+        <field name="invoice_line_tax_id" position="after">
+<!--            <separator string="Converted amounts" colspan="4" />
+Space is too limited on invoice line form view in v6.1
+ -->
+            <field name="price_unit_company_currency" />
+            <field name="price_subtotal_company_currency" />
+        </field>
     </field>
 </record>
 
