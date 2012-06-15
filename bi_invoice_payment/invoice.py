@@ -73,7 +73,10 @@ class account_invoice(osv.osv):
                             total_down_pay -= payment.debit
 
                 # We have a final payment date only when the invoice if reconciled
-                if inv.reconciled:
+                # We also need to check if there are some payment lines
+                # because, when we unreconcile a payment voucher, the payment lines
+                # are unlinked but reconcile is still True for a little amount of time
+                if inv.reconciled and inv.payment_ids:
                     # If we have at least one pay line in cash journal, we take the max
                     # date of the payment lines in cash journal
                     if max_date_cash_journal:
