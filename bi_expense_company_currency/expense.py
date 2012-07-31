@@ -55,14 +55,14 @@ class hr_expense_line(osv.osv):
                     'amount_untaxed_company_currency': False,
                     'unit_amount_company_currency': False,
                 }
-        print "result =", result
+        #print "result =", result
         return result
 
     def _get_expense_lines_from_expenses(self, cr, uid, ids, context=None):
         return self.pool.get('hr.expense.line').search(cr, uid, [('expense_id', 'in', ids)], context=context)
 
     def _get_expense_lines_from_currency_rates(self, cr, uid, ids, context=None):
-        print "_get_expense_lines_from_currency_rates IDS=", ids
+        #print "_get_expense_lines_from_currency_rates IDS=", ids
         currencies_ids = self.read(cr, uid, ids, ['currency_id'], context=context)
         #print "currencies_ids=", currencies_ids
         currency_list = []
@@ -73,7 +73,7 @@ class hr_expense_line(osv.osv):
         expense_ids = self.pool.get('hr.expense.expense').search(cr, uid, [('currency_id', 'in', currency_list)], context=context)
         #print "expense_ids =", expense_ids
         res = self.pool.get('hr.expense.line').search(cr, uid, [('expense_id', 'in', expense_ids)], context=context)
-        print "res=", res
+        #print "res=", res
         return res
 
     _columns = {
