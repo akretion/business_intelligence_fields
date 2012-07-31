@@ -30,7 +30,9 @@ class account_invoice_line(osv.osv):
     def _compute_amount_in_company_currency(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for inv_line in self.browse(cr, uid, ids, context=context):
-            if inv_line.invoice_id and inv_line.invoice_id.currency_id == inv_line.invoice_id.company_id.currency_id:
+            src_cur = inv_line.invoice_id.currency_id.id
+            company_cur = inv_line.invoice_id.company_id.currency_id.id
+            if inv_line.invoice_id and src_cur == company_cur:
                 # No currency conversion required
                 result[inv_line.id] = {
                     'price_subtotal_company_currency': inv_line.price_subtotal,
@@ -41,8 +43,8 @@ class account_invoice_line(osv.osv):
                 if inv_line.invoice_id.date_invoice:
                     context['date'] = inv_line.invoice_id.date_invoice
                 result[inv_line.id] = {
-                    'price_subtotal_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_subtotal, context=context),
-                    'price_unit_company_currency': self.pool.get('res.currency').compute(cr, uid, inv_line.invoice_id.currency_id.id, inv_line.invoice_id.company_id.currency_id.id, inv_line.price_unit, context=context)
+                    'price_subtotal_company_currency': self.pool.get('res.currency').compute(cr, uid, src_cur, company_cur, inv_line.price_subtotal, context=context),
+                    'price_unit_company_currency': self.pool.get('res.currency').compute(cr, uid, src_cur, company_cur, inv_line.price_unit, context=context)
                 }
             else: # when we have shipping policy = shipping & manual invoice,
             # the invoice object is created after the invoice line object
