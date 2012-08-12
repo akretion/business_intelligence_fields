@@ -30,16 +30,16 @@ class hr_expense_line(osv.osv):
     def _compute_amount_in_company_currency(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for exp_line in self.browse(cr, uid, ids, context=context):
-            src_cur = exp_line.expense_id.currency_id.id
-            company_cur = exp_line.expense_id.company_id.currency_id.id
-            if exp_line.expense_id and src_cur == company_cur:
+            src_cur = exp_line.expense_id and exp_line.expense_id.currency_id.id or False
+            company_cur = exp_line.expense_id and exp_line.expense_id.company_id.currency_id.id or False
+            if src_cur and src_cur == company_cur:
                 # No currency conversion required
                 result[exp_line.id] = {
                     'total_amount_company_currency': exp_line.total_amount,
                     'amount_untaxed_company_currency': exp_line.amount_untaxed,
                     'unit_amount_company_currency': exp_line.unit_amount,
                 }
-            elif exp_line.expense_id:
+            elif src_cur:
                 # Convert on the date of the expense
                 if exp_line.expense_id.date:
                     context['date'] = exp_line.expense_id.date

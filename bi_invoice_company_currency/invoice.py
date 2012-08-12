@@ -30,15 +30,17 @@ class account_invoice_line(osv.osv):
     def _compute_amount_in_company_currency(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for inv_line in self.browse(cr, uid, ids, context=context):
-            src_cur = inv_line.invoice_id.currency_id.id
-            company_cur = inv_line.invoice_id.company_id.currency_id.id
-            if inv_line.invoice_id and src_cur == company_cur:
+            src_cur = inv_line.invoice_id and inv_line.invoice_id.currency_id.id or False
+            company_cur = inv_line.invoice_id and inv_line.invoice_id.company_id.currency_id.id or False
+            # We need to test if src_cur exists, because inv_line.invoice_id is
+            # False during a small amount of time during invoice creation
+            if src_cur and src_cur == company_cur:
                 # No currency conversion required
                 result[inv_line.id] = {
                     'price_subtotal_company_currency': inv_line.price_subtotal,
                     'price_unit_company_currency': inv_line.price_unit,
                 }
-            elif inv_line.invoice_id:
+            elif src_cur:
                 # Convert on the date of the invoice
                 if inv_line.invoice_id.date_invoice:
                     context['date'] = inv_line.invoice_id.date_invoice
