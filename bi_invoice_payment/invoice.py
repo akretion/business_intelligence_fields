@@ -63,11 +63,11 @@ class account_invoice(osv.osv):
                     if inv.reconciled:
                         if payment.date and payment.date > max_date_all_journals:
                             max_date_all_journals = payment.date
-                        if payment.date and payment.journal_id and payment.journal_id.type == 'cash' and payment.date > max_date_cash_journal:
+                        if payment.date and payment.journal_id and payment.journal_id.type in ('cash', 'bank') and payment.date > max_date_cash_journal:
                             max_date_cash_journal = payment.date
 
                     if payment.date <= inv.date_invoice:
-                        if payment.journal_id and payment.journal_id.type == 'cash':
+                        if payment.journal_id and payment.journal_id.type in ('cash', 'bank'):
                             total_down_pay += payment.credit
                         elif payment.journal_id and payment.journal_id.type == 'sale':
                             total_down_pay -= payment.debit
