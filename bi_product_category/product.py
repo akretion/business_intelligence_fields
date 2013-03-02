@@ -54,8 +54,11 @@ class product_category(osv.osv):
 
             res[categ['id']] = {
                 'bi_l1_name': reverse_hierachy and reverse_hierachy[-1] or 'None',
-                'bi_l2_name': len(reverse_hierachy) > 1 and reverse_hierachy[-2] or 'None',
-                'bi_l3_name': len(reverse_hierachy) > 2 and reverse_hierachy[-3] or 'None'
+                'bi_l2_name': len(reverse_hierachy) >= 2 and reverse_hierachy[-2] or 'None',
+                'bi_l3_name': len(reverse_hierachy) >= 3 and reverse_hierachy[-3] or 'None',
+                'bi_l4_name': len(reverse_hierachy) >= 4 and reverse_hierachy[-4] or 'None',
+                'bi_l5_name': len(reverse_hierachy) >= 5 and reverse_hierachy[-5] or 'None',
+                'bi_l6_name': len(reverse_hierachy) >= 6 and reverse_hierachy[-6] or 'None',
             }
         return res
 
@@ -75,6 +78,15 @@ class product_category(osv.osv):
             'product.category': (_invalidate_categ, ['name', 'parent_id'], 10),
             }),
         'bi_l3_name': fields.function(_compute_layers_name, type='char', size=64, multi='layers', string='Layer 3 name', store={
+            'product.category': (_invalidate_categ, ['name', 'parent_id'], 10),
+            }),
+        'bi_l4_name': fields.function(_compute_layers_name, type='char', size=64, multi='layers', string='Layer 4 name', store={
+            'product.category': (_invalidate_categ, ['name', 'parent_id'], 10),
+            }),
+        'bi_l5_name': fields.function(_compute_layers_name, type='char', size=64, multi='layers', string='Layer 5 name', store={
+            'product.category': (_invalidate_categ, ['name', 'parent_id'], 10),
+            }),
+        'bi_l6_name': fields.function(_compute_layers_name, type='char', size=64, multi='layers', string='Layer 6 name', store={
             'product.category': (_invalidate_categ, ['name', 'parent_id'], 10),
             }),
         }
