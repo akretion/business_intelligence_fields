@@ -17,6 +17,7 @@
     <field name="arch" type="xml">
         <field name="payment_ids" position="after">
             <separator string="Payment statistics" colspan="4" />
+            <field name="payment_journal_id" />
             <field name="total_down_payment_company_currency" />
             <field name="date_final_payment" />
             <field name="payment_delay_days" />

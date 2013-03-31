@@ -55,6 +55,7 @@ class account_invoice(osv.osv):
             max_date_cash_journal = False
             payment_delay_days_to_write = False
             overdue_delay_days_to_write = False
+            payment_journal_id_to_write = False
             total_down_pay_to_write = 0.0
             total_down_pay = 0.0
             # no final payment date nor down payment for refunds
@@ -65,6 +66,8 @@ class account_invoice(osv.osv):
                             max_date_all_journals = payment.date
                         if payment.date and payment.journal_id and payment.journal_id.type in ('cash', 'bank') and payment.date > max_date_cash_journal:
                             max_date_cash_journal = payment.date
+                        if not payment_journal_id_to_write and payment.journal_id:
+                            payment_journal_id_to_write = payment.journal_id.id
 
                     if payment.date <= inv.date_invoice:
                         if payment.journal_id and payment.journal_id.type in ('cash', 'bank'):
@@ -119,6 +122,7 @@ class account_invoice(osv.osv):
                     'overdue_delay_days': overdue_delay_days_to_write,
                     'payment_delay_days': payment_delay_days_to_write,
                     'total_down_payment_company_currency': total_down_pay_to_write,
+                    'payment_journal_id': payment_journal_id_to_write,
             }
         #print "result =", result
         return result
@@ -147,6 +151,10 @@ class account_invoice(osv.osv):
         'total_down_payment_company_currency': fields.function(_compute_bi_payment, method=True, multi='bipay', type='float', digits_compute=dp.get_precision('Account'), string='Total down payment in company currency', store={
             'account.move.line': (_bi_get_invoice_from_line, None, 50),
             'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+            }),
+        'payment_journal_id': fields.function(_compute_bi_payment, method=True, multi='bipay', type='many2one', relation='account.journal', string='Payment journal', help="Journal of the first payment line.", store={
+                'account.move.line': (_bi_get_invoice_from_line, None, 50),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
             }),
     }
 
