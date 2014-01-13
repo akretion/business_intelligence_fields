@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    bi_time_dimension module for OpenERP
-#    Copyright (C) 2013 Akretion (http://www.akretion.com). All Rights Reserved
+#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,5 +20,4 @@
 #
 ##############################################################################
 
-import generate_time_dimension
-
+from . import generate_time_dimension

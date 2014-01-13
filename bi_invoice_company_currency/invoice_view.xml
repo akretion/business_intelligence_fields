@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-    Copyright (C) 2011 Akretion (http://www.akretion.com/)
+    Copyright (C) 2011-2014 Akretion (http://www.akretion.com/)
     @author Alexis de Lattre <alexis.delattre@akretion.com>
     The licence is in the file __openerp__.py
 -->
@@ -10,7 +10,7 @@
 <data>
 
 <!-- Add fields on invoice line view -->
-<record id="bi_invoice_cc_invoice_line_form" model="ir.ui.view">
+<record id="view_invoice_line_form" model="ir.ui.view">
     <field name="name">bi.invoice.cc.invoice.line.form</field>
     <field name="model">account.invoice.line</field>
     <field name="inherit_id" ref="account.view_invoice_line_form" />
@@ -26,18 +26,31 @@ Space is too limited on invoice line form view in v6.1
 </record>
 
 <!-- Add fields on invoice view -->
-<record id="bi_invoice_cc_invoice_form" model="ir.ui.view">
+<record id="invoice_form" model="ir.ui.view">
     <field name="name">bi.invoice.cc.invoice.form</field>
     <field name="model">account.invoice</field>
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
         <field name="move_id" position="after">
-            <separator colspan="4" string="Converted amounts"/>
             <field name="amount_untaxed_company_currency" />
             <field name="amount_total_company_currency" />
         </field>
     </field>
 </record>
+
+<!-- Add fields on supplier invoice view -->
+<record id="invoice_supplier_form" model="ir.ui.view">
+    <field name="name">bi.invoice.cc.supplier.invoice.form</field>
+    <field name="model">account.invoice</field>
+    <field name="inherit_id" ref="account.invoice_supplier_form" />
+    <field name="arch" type="xml">
+        <xpath expr="//group/field[@name='company_id']" position="after">
+            <field name="amount_untaxed_company_currency" />
+            <field name="amount_total_company_currency" />
+        </xpath>
+    </field>
+</record>
+
 
 </data>
 </openerp>

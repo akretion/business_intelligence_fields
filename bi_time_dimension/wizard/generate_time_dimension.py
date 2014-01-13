@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    bi_time_dimension module for OpenERP
-#    Copyright (C) 2013 Akretion (http://www.akretion.com). All Rights Reserved
+#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,18 +20,17 @@
 #
 ##############################################################################
 
-from osv import osv, fields
+from openerp.osv import orm, fields
 import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
-
+TIME_DIMENSION_TABLE = 'bi_time_dimension'
 # Ideas : map to fiscal year ?
 
-TIME_DIMENSION_TABLE = 'bi_time_dimension'
 
-class generate_time_dimension(osv.osv_memory):
+class generate_time_dimension(orm.TransientModel):
     _name = 'generate.time.dimension'
     _description = 'Generate Time Dimension for OLAP'
 
@@ -46,9 +45,11 @@ class generate_time_dimension(osv.osv_memory):
                 return False
         return True
 
-    _constraints = [
-        (_start_before_end, "Start date must be before end date", ['start_date', 'end_date']),
-        ]
+    _constraints = [(
+        _start_before_end,
+        "Start date must be before end date",
+        ['start_date', 'end_date']
+        )]
 
     def button_run(self, cr, uid, ids, context=None):
         if self.run_generate_table(cr, uid, ids, context=context):
@@ -62,29 +63,30 @@ class generate_time_dimension(osv.osv_memory):
         cr.execute(query_drop_table)
 
         table_cols = [
-        {'name': 'date', 'dbtype': 'DATE PRIMARY KEY'},
-        {'name': 'year',     'dbtype': 'VARCHAR(4) NOT NULL'},
-        {'name': 'semester', 'dbtype': 'VARCHAR(7) NOT NULL'},
-        {'name': 'quarter',  'dbtype': 'VARCHAR(7) NOT NULL'},
-        {'name': 'month',    'dbtype': 'VARCHAR(7) NOT NULL'},
-        {'name': 'day',      'dbtype': 'VARCHAR(10) NOT NULL'},
+            {'name': 'date',     'dbtype': 'DATE PRIMARY KEY'},
+            {'name': 'year',     'dbtype': 'VARCHAR(4) NOT NULL'},
+            {'name': 'semester', 'dbtype': 'VARCHAR(7) NOT NULL'},
+            {'name': 'quarter',  'dbtype': 'VARCHAR(7) NOT NULL'},
+            {'name': 'month',    'dbtype': 'VARCHAR(7) NOT NULL'},
+            {'name': 'day',      'dbtype': 'VARCHAR(10) NOT NULL'},
         ]
 
         list_cols_with_type = ''
         list_cols = ''
         i = 1
         for col in table_cols:
-            list_cols_with_type += col['name'] + ' ' + col['dbtype']
+            list_cols_with_type += '%s %s' % (col['name'], col['dbtype'])
             list_cols += col['name']
-            if i <> len(table_cols):
+            if i != len(table_cols):
                 list_cols_with_type += ', '
                 list_cols += ', '
             i += 1
 
         #print "list_cols_with_type=", list_cols_with_type
+        query_create_table = 'CREATE TABLE %s (%s)' % (
+            TIME_DIMENSION_TABLE, list_cols_with_type)
 
-        query_create_table = 'CREATE TABLE %s (%s)' % (TIME_DIMENSION_TABLE, list_cols_with_type)
-        _logger.debug('Executing SQL = %s' % query_create_table)
+        _logger.debug('Executing create table query: %s' % query_create_table)
         cr.execute(query_create_table)
 
         wiz = self.browse(cr, uid, ids[0], context=context)
@@ -94,15 +96,13 @@ class generate_time_dimension(osv.osv_memory):
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
 
         cur_date = start_date
+        list_values = []
         while True:
             #_logger.debug("Current date = %s", cur_date)
-            # TODO : clean-up this code
             # date as timestamp
-#            list_values = "TIMESTAMP '" + cur_date.strftime('%Y-%m-%d') + " 00:00:00'" + ", "
 
-            list_values = "'" + cur_date.strftime('%Y-%m-%d') + "', "
-            # Year
-            list_values += "'" + cur_date.strftime('%Y') + "', "
+            # list_values = "TIMESTAMP '" + cur_date.strftime('%Y-%m-%d')
+            # + " 00:00:00'" + ", "
             compute = {
                 '01': {'quarter': 'Q1', 'semester': 'S1'},
                 '02': {'quarter': 'Q1', 'semester': 'S1'},
@@ -117,22 +117,33 @@ class generate_time_dimension(osv.osv_memory):
                 '11': {'quarter': 'Q4', 'semester': 'S2'},
                 '12': {'quarter': 'Q4', 'semester': 'S2'},
             }
-            # Semester
             month_str = cur_date.strftime('%m')
-            list_values += "'" + cur_date.strftime('%Y-') + compute[month_str]['semester'] + "', "
-            # Quarter
-            list_values += "'" + cur_date.strftime('%Y-') + compute[month_str]['quarter'] + "', "
+            semester = '%s-%s' % (
+                cur_date.strftime('%Y'), compute[month_str]['semester'])
+            quarter = '%s-%s' % (
+                cur_date.strftime('%Y'), compute[month_str]['quarter'])
 
-            # Month
-            list_values += "'" + cur_date.strftime('%Y-%m') + "', "
-            # Day
-            list_values += "'" + cur_date.strftime('%Y-%m-%d') + "'"
-            # Insert cur_date in SQL
-            query_insert_date = 'INSERT INTO %s (%s) VALUES (%s)' %(TIME_DIMENSION_TABLE, list_cols, list_values)
-            _logger.debug('Insert date = %s' % query_insert_date)
-            cr.execute(query_insert_date)
+            list_values.append({
+                'date': cur_date.strftime('%Y-%m-%d'),
+                'year': cur_date.strftime('%Y'),
+                'semester': semester,
+                'quarter': quarter,
+                'month': cur_date.strftime('%Y-%m'),
+                'day': cur_date.strftime('%Y-%m-%d'),
+            })
+
             if cur_date == end_date:
                 break
             # go to next day
             cur_date += relativedelta(days=1)
+        # Insert cur_date in SQL
+        from pprint import pprint
+        pprint(list_values)
+        query_insert_date = 'INSERT INTO %s (%s) VALUES (%s)' % (
+            TIME_DIMENSION_TABLE, list_cols,
+            '%(date)s, %(year)s, %(semester)s, %(quarter)s, %(month)s, %(day)s'
+            )
+        _logger.debug('Insert into queries: %s' % query_insert_date)
+        cr.executemany(query_insert_date, list_values)
+
         return True

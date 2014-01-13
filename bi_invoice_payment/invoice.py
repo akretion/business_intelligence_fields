@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    bi_invoice_payment module for OpenERP
-#    Copyright (C) 2011 Akretion (http://www.akretion.com/) All Rights Reserved
+#    Copyright (C) 2011-2014 Akretion (http://www.akretion.com/)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,11 @@
 #
 ##############################################################################
 
-from osv import osv, fields
+from openerp.osv import orm, fields
 from datetime import datetime, timedelta
-from tools import config
 import decimal_precision as dp
 
-class account_invoice(osv.osv):
+class account_invoice(orm.Model):
     _inherit = "account.invoice"
 
     def _compute_bi_payment(self, cr, uid, ids, name, arg, context=None):
@@ -157,5 +156,3 @@ class account_invoice(osv.osv):
                 'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
             }),
     }
-
-account_invoice()

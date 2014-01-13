@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    bi_invoice_company_currency module for OpenERP
-#    Copyright (C) 2011 Akretion (http://www.akretion.com). All Rights Reserved
+#    Copyright (C) 2011-2014 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -24,18 +24,14 @@
 {
     'name': 'Business intelligence - Invoice in company currency',
     'version': '0.2',
-    'category': 'Generic Modules/Others',
+    'category': 'Accounting & Finance',
     'license': 'AGPL-3',
-    'complexity': 'easy',
     'description': """This module adds some fields required to do business intelligence :
-it adds the amount in company currency on the invoice and invoice line.""",
+it adds the amount in company currency on the invoices and invoice lines.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['account'],
-    'init_xml': [],
-    'update_xml': ['invoice_view.xml'],
-    'demo_xml': [],
+    'data': ['invoice_view.xml'],
     'installable': True,
     'active': False,
 }
-

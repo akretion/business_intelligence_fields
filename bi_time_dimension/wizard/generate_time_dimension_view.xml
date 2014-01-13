@@ -18,14 +18,14 @@
              <field name="end_date" />
              <newline />
              <button icon="gtk-cancel" special="cancel" string="Cancel" colspan="2"/>
-             <button icon="gtk-ok" name="button_run" string="Create time dimension" type="object" colspan="2"/>
+             <button icon="gtk-ok" name="button_run" string="Create Time Dimension" type="object" colspan="2"/>
        </form>
     </field>
 </record>
 
 
 <record id="action_generate_time_dimension" model="ir.actions.act_window">
-    <field name="name">Create time dimension</field>
+    <field name="name">Create Time Dimension</field>
     <field name="res_model">generate.time.dimension</field>
     <field name="view_type">form</field>
     <field name="view_mode">form</field>
