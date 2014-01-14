@@ -32,8 +32,9 @@ Space is too limited on invoice line form view in v6.1
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
         <field name="move_id" position="after">
-            <field name="amount_untaxed_company_currency" />
-            <field name="amount_total_company_currency" />
+            <field name="company_currency_id" invisible="True"/>
+            <field name="amount_untaxed_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}"/>
+            <field name="amount_total_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}"/>
         </field>
     </field>
 </record>

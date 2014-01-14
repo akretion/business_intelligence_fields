@@ -29,6 +29,8 @@ class account_invoice_line(orm.Model):
 
     def _compute_amount_in_company_currency(
             self, cr, uid, ids, name, arg, context=None):
+        if context is None:
+            context = {}
         result = {}
         for inv_line in self.browse(cr, uid, ids, context=context):
             src_cur = (
@@ -47,17 +49,18 @@ class account_invoice_line(orm.Model):
                 }
             elif src_cur:
                 # Convert on the date of the invoice
+                cc_ctx = context.copy()
                 if inv_line.invoice_id.date_invoice:
-                    context['date'] = inv_line.invoice_id.date_invoice
+                    cc_ctx['date'] = inv_line.invoice_id.date_invoice
                 result[inv_line.id] = {
                     'price_subtotal_company_currency':
                     self.pool['res.currency'].compute(
                         cr, uid, src_cur, company_cur,
-                        inv_line.price_subtotal, context=context),
+                        inv_line.price_subtotal, context=cc_ctx),
                     'price_unit_company_currency':
                     self.pool['res.currency'].compute(
                         cr, uid, src_cur, company_cur,
-                        inv_line.price_unit, context=context)
+                        inv_line.price_unit, context=cc_ctx)
                 }
             else:
             # when we have shipping policy = shipping & manual invoice,
@@ -79,7 +82,7 @@ class account_invoice_line(orm.Model):
         'price_subtotal_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencyinvline',
             type='float', digits_compute=dp.get_precision('Account'),
-            string='Subtotal in company currency', store={
+            string='Subtotal in Company Currency', store={
                 'account.invoice.line': (
                     lambda self, cr, uid, ids, c={}: ids,
                     ['price_unit', 'quantity', 'discount', 'invoice_id'], 10),
@@ -99,7 +102,7 @@ class account_invoice_line(orm.Model):
         'price_unit_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencyinvline',
             type='float', digits_compute=dp.get_precision('Account'),
-            string='Unit price in company currency', store={
+            string='Unit Price in Company Currency', store={
                 'account.invoice.line': (
                     lambda self, cr, uid, ids, c={}: ids,
                     ['price_unit', 'invoice_id'], 10),
@@ -114,6 +117,8 @@ class account_invoice(orm.Model):
 
     def _compute_amount_in_company_currency(
             self, cr, uid, ids, name, arg, context=None):
+        if context is None:
+            context = {}
         result = {}
         for inv in self.browse(cr, uid, ids, context=context):
             if inv.currency_id == inv.company_id.currency_id:
@@ -124,19 +129,20 @@ class account_invoice(orm.Model):
                 }
             else:
                 # Convert on the date of the invoice
+                cc_ctx = context.copy()
                 if inv.date_invoice:
-                    context['date'] = inv.date_invoice
+                    cc_ctx['date'] = inv.date_invoice
                 result[inv.id] = {
                     'amount_untaxed_company_currency':
                     self.pool['res.currency'].compute(
                         cr, uid, inv.currency_id.id,
                         inv.company_id.currency_id.id, inv.amount_untaxed,
-                        context=context),
+                        context=cc_ctx),
                     'amount_total_company_currency':
                     self.pool['res.currency'].compute(
                         cr, uid, inv.currency_id.id,
                         inv.company_id.currency_id.id, inv.amount_total,
-                        context=context)
+                        context=cc_ctx)
                 }
         #print "result =", result
         return result
@@ -153,7 +159,7 @@ class account_invoice(orm.Model):
         'amount_untaxed_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencyinvoice',
             type='float', digits_compute=dp.get_precision('Account'),
-            string='Untaxed in company currency', store={
+            string='Untaxed in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}: ids,
                     ['invoice_line'], 20),
@@ -168,7 +174,7 @@ class account_invoice(orm.Model):
         'amount_total_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencyinvoice',
             type='float', digits_compute=dp.get_precision('Account'),
-            string='Total in company currency', store={
+            string='Total in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}:
                     ids, ['invoice_line'], 20),
@@ -180,4 +186,7 @@ class account_invoice(orm.Model):
                         'quantity',
                         'discount'], 20),
             }),
+        'company_currency_id': fields.related(
+            'company_id', 'currency_id', readonly=True, type='many2one',
+            relation='res.currency', string="Company Currency"),
     }
