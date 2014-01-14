@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    bi_product_category module for OpenERP
-#    Copyright (C) 2013 Akretion (http://www.akretion.com). All Rights Reserved
+#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,20 +22,16 @@
 
 
 {
-    'name': 'Business intelligence - Product category',
+    'name': 'Business Intelligence - Product category',
     'version': '0.1',
-    'category': 'Generic Modules/Others',
+    'category': 'Business Intelligence',
     'license': 'AGPL-3',
-    'complexity': 'easy',
     'description': """This module adds some fields required to do business intelligence :
 it adds the different levels of hierarchy on product categories and stores in the database their complete name.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['product'],
-    'init_xml': [],
-    'update_xml': [],
-    'demo_xml': [],
+    'data': [],
     'installable': True,
     'active': False,
 }
-
