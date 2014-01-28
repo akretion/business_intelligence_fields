@@ -84,10 +84,12 @@ class account_invoice_line(orm.Model):
             type='float', digits_compute=dp.get_precision('Account'),
             string='Subtotal in Company Currency', store={
                 'account.invoice.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'quantity', 'discount', 'invoice_id'], 10),
+                    lambda self, cr, uid, ids, c={}: ids, [
+                        'price_unit', 'quantity', 'discount',
+                        'invoice_id', 'invoice_line_tax_id'], 10),
                 'account.invoice': (
-                    _get_invoice_lines_from_invoices, ['move_id'], 20),
+                    _get_invoice_lines_from_invoices,
+                    ['move_id', 'currency_id'], 20),
             }),
         # In the trigger object for invalidation of these function
         # fields, why do I have accout.invoice -> move_id, and not
@@ -107,7 +109,8 @@ class account_invoice_line(orm.Model):
                     lambda self, cr, uid, ids, c={}: ids,
                     ['price_unit', 'invoice_id'], 10),
                 'account.invoice': (
-                    _get_invoice_lines_from_invoices, ['move_id'], 20),
+                    _get_invoice_lines_from_invoices,
+                    ['move_id', 'currency_id'], 20),
                 }),
     }
 
@@ -162,7 +165,7 @@ class account_invoice(orm.Model):
             string='Untaxed in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['invoice_line'], 20),
+                    ['invoice_line', 'currency_id'], 20),
                 'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
                 'account.invoice.line': (
                     _bi_get_invoice_line, [
@@ -177,7 +180,7 @@ class account_invoice(orm.Model):
             string='Total in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}:
-                    ids, ['invoice_line'], 20),
+                    ids, ['invoice_line', 'currency_id'], 20),
                 'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
                 'account.invoice.line': (
                     _bi_get_invoice_line, [

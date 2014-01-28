@@ -81,10 +81,13 @@ class sale_order_line(orm.Model):
             type='float', digits_compute=dp.get_precision('Account'),
             string='Subtotal in Company Currency', store={
                 'sale.order.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'product_uom_qty', 'discount', 'order_id'],
-                    10),
-                'sale.order': (_get_solines_from_orders, ['date_order'], 20),
+                    lambda self, cr, uid, ids, c={}: ids, [
+                        'price_unit', 'product_uom_qty', 'discount',
+                        'order_id', 'tax_id'
+                    ], 10),
+                'sale.order': (
+                    _get_solines_from_orders,
+                    ['date_order', 'pricelist_id'], 20),
             }),
         'price_unit_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencysoline',
@@ -93,7 +96,9 @@ class sale_order_line(orm.Model):
                 'sale.order.line': (
                     lambda self, cr, uid, ids, c={}: ids,
                     ['price_unit', 'order_id'], 10),
-                'sale.order': (_get_solines_from_orders, ['date_order'], 20),
+                'sale.order': (
+                    _get_solines_from_orders,
+                    ['date_order', 'pricelist_id'], 20),
                 }),
     }
 
@@ -144,7 +149,7 @@ class sale_order(orm.Model):
             string='Untaxed in Company Currency', store={
                 'sale.order': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['order_line', 'date_order'], 20),
+                    ['order_line', 'date_order', 'pricelist_id'], 20),
                 'sale.order.line': (
                     _bi_get_sale_order_line, [
                         'price_unit',
@@ -158,7 +163,7 @@ class sale_order(orm.Model):
             string='Total in Company Currency', store={
                 'sale.order': (
                     lambda self, cr, uid, ids, c={}:
-                    ids, ['order_line', 'date_order'], 20),
+                    ids, ['order_line', 'date_order', 'pricelist_id'], 20),
                 'sale.order.line': (
                     _bi_get_sale_order_line, [
                         'price_unit',
