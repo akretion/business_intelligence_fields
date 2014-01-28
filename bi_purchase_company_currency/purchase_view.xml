@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+    Copyright (C) 2014 Akretion (http://www.akretion.com/)
+    @author Alexis de Lattre <alexis.delattre@akretion.com>
+    The licence is in the file __openerp__.py
+-->
+
+<openerp>
+<data>
+
+<!-- Add fields on purchase order form view -->
+<record id="purchase_order_form" model="ir.ui.view">
+    <field name="name">bi.cc.purchase.order.form</field>
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_form" />
+    <field name="arch" type="xml">
+        <field name="date_approve" position="after">
+            <field name="company_currency_id" invisible="True"/>
+            <field name="amount_untaxed_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}" />
+            <field name="amount_total_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}"/>
+        </field>
+    </field>
+</record>
+
+</data>
+</openerp>
