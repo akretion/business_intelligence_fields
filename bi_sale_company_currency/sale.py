@@ -68,8 +68,12 @@ class sale_order_line(orm.Model):
                     'price_subtotal_company_currency': False,
                     'price_unit_company_currency': False,
                 }
-        #print "result =", result
         return result
+
+    def __compute_amount_in_company_currency(
+            self, cr, uid, ids, name, arg, context=None):
+        return self._compute_amount_in_company_currency(
+            cr, uid, ids, name, arg, context=context)
 
     def _get_solines_from_orders(self, cr, uid, ids, context=None):
         return self.pool['sale.order.line'].search(
@@ -77,7 +81,7 @@ class sale_order_line(orm.Model):
 
     _columns = {
         'price_subtotal_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencysoline',
+            __compute_amount_in_company_currency, multi='currencysoline',
             type='float', digits_compute=dp.get_precision('Account'),
             string='Subtotal in Company Currency', store={
                 'sale.order.line': (
@@ -90,7 +94,7 @@ class sale_order_line(orm.Model):
                     ['date_order', 'pricelist_id'], 20),
             }),
         'price_unit_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencysoline',
+            __compute_amount_in_company_currency, multi='currencysoline',
             type='float', digits_compute=dp.get_precision('Product Price'),
             string='Unit price in Company Currency', store={
                 'sale.order.line': (
@@ -135,8 +139,12 @@ class sale_order(orm.Model):
                         so.company_id.currency_id.id, so.amount_total,
                         context=cc_ctx)
                 }
-        #print "result =", result
         return result
+
+    def __compute_amount_in_company_currency(
+            self, cr, uid, ids, name, arg, context=None):
+        return self._compute_amount_in_company_currency(
+            cr, uid, ids, name, arg, context=context)
 
     def _bi_get_sale_order_line(self, cr, uid, ids, context=None):
         return self.pool['sale.order']._get_order(
@@ -144,7 +152,7 @@ class sale_order(orm.Model):
 
     _columns = {
         'amount_untaxed_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyso',
+            __compute_amount_in_company_currency, multi='currencyso',
             type='float', digits_compute=dp.get_precision('Account'),
             string='Untaxed in Company Currency', store={
                 'sale.order': (
@@ -158,7 +166,7 @@ class sale_order(orm.Model):
                         'discount'], 20),
             }),
         'amount_total_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyso',
+            __compute_amount_in_company_currency, multi='currencyso',
             type='float', digits_compute=dp.get_precision('Account'),
             string='Total in Company Currency', store={
                 'sale.order': (
