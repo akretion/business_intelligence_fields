@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_sale_company_currency module for OpenERP
-#    Copyright (C) 2011-2014 Akretion (http://www.akretion.com)
+#    bi_sale_company_currency module for Odoo
+#    Copyright (C) 2011-2015 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -33,5 +33,4 @@ it adds the amount in company currency on the sale order lines.""",
     'depends': ['sale'],
     'data': ['sale_view.xml'],
     'installable': True,
-    'active': False,
 }

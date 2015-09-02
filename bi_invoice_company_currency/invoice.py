@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_invoice_company_currency module for OpenERP
-#    Copyright (C) 2011-2014 Akretion (http://www.akretion.com/)
+#    bi_invoice_company_currency module for Odoo
+#    Copyright (C) 2011-2015 Akretion (http://www.akretion.com/)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,176 +20,88 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields, api
 import openerp.addons.decimal_precision as dp
 
 
-class account_invoice_line(orm.Model):
+class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for inv_line in self.browse(cr, uid, ids, context=context):
-            src_cur = (
-                inv_line.invoice_id and inv_line.invoice_id.currency_id.id
-                or False)
-            company_cur = (
-                inv_line.invoice_id and
-                inv_line.invoice_id.company_id.currency_id.id or False)
-            # We need to test if src_cur exists, because inv_line.invoice_id
-            # is False during a small amount of time during invoice creation
-            if src_cur and src_cur == company_cur:
-                # No currency conversion required
-                result[inv_line.id] = {
-                    'price_subtotal_company_currency': inv_line.price_subtotal,
-                    'price_unit_company_currency': inv_line.price_unit,
-                }
-            elif src_cur:
-                # Convert on the date of the invoice
-                cc_ctx = context.copy()
-                if inv_line.invoice_id.date_invoice:
-                    cc_ctx['date'] = inv_line.invoice_id.date_invoice
-                result[inv_line.id] = {
-                    'price_subtotal_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        inv_line.price_subtotal, context=cc_ctx),
-                    'price_unit_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        inv_line.price_unit, context=cc_ctx)
-                }
-            else:
-            # when we have shipping policy = shipping & manual invoice,
-            # the invoice object is created after the invoice line object
-            # so inv_line.invoice_id is False on the first execution of the
-            # function
-                result[inv_line.id] = {
-                    'price_subtotal_company_currency': False,
-                    'price_unit_company_currency': False,
-                }
-        #print "result =", result
-        return result
+    # In @api.depends, why do I have accout.invoice -> move_id, and not
+    # 'res.currency.rate' ? Answer : because, in the accounting
+    # entries, the computation of currency conversion takes place
+    # when the accountings entries are created, i.e. when the
+    # invoice goes from 'draft' to 'open'. It is not re-computed
+    # every time a new currency rate is entered. So we want to
+    # compute the currency conversion simultaneously with the
+    # accounting entries. That's why we trigger on move_id field on
+    # account.invoice.
+    @api.one
+    @api.depends(
+        'invoice_id.currency_id', 'invoice_id.move_id',
+        'invoice_id.date_invoice', 'invoice_id.type', 'invoice_id.company_id',
+        'price_subtotal', 'price_unit')
+    def _compute_amount_in_company_currency(self):
+        price_subtotal_cc = 0.0
+        price_unit_cc = 0.0
+        sign = 1
+        if self.invoice_id:
+            if self.invoice_id.type in ('out_refund', 'in_refund'):
+                sign = -1
+            # Convert on the date of the invoice
+            price_subtotal_cc = self.invoice_id.currency_id.with_context(
+                date=self.invoice_id.date_invoice,
+                disable_rate_date_check=True).compute(
+                    self.price_subtotal,
+                    self.invoice_id.company_id.currency_id) * sign
+            price_unit_cc = self.invoice_id.currency_id.with_context(
+                date=self.invoice_id.date_invoice,
+                disable_rate_date_check=True).compute(
+                    self.price_unit,
+                    self.invoice_id.company_id.currency_id)
+        self.price_subtotal_company_currency = price_subtotal_cc
+        self.price_unit_company_currency = price_unit_cc
 
-    def _get_invoice_lines_from_invoices(self, cr, uid, ids, context=None):
-        return self.pool['account.invoice.line'].search(
-            cr, uid, [('invoice_id', 'in', ids)], context=context)
-
-    _columns = {
-        'price_subtotal_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyinvline',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Subtotal in Company Currency', store={
-                'account.invoice.line': (
-                    lambda self, cr, uid, ids, c={}: ids, [
-                        'price_unit', 'quantity', 'discount',
-                        'invoice_id', 'invoice_line_tax_id'], 10),
-                'account.invoice': (
-                    _get_invoice_lines_from_invoices,
-                    ['move_id', 'currency_id'], 20),
-            }),
-        # In the trigger object for invalidation of these function
-        # fields, why do I have accout.invoice -> move_id, and not
-        # 'res.currency.rate' ? Answer : because, in the accounting
-        # entries, the computation of currency conversion takes place
-        # when the accountings entries are created, i.e. when the
-        # invoice goes from 'draft' to 'open'. It is not re-computed
-        # every time a new currency rate is entered. So we want to
-        # compute the currency conversion simultaneously with the
-        # accounting entries. That's why we trigger on move_id field on
-        # account.invoice.
-        'price_unit_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyinvline',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Unit Price in Company Currency', store={
-                'account.invoice.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'invoice_id'], 10),
-                'account.invoice': (
-                    _get_invoice_lines_from_invoices,
-                    ['move_id', 'currency_id'], 20),
-                }),
-    }
+    price_subtotal_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Subtotal in Company Currency', store=True,
+        help='The amount is negative for a refund')
+    price_unit_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Unit Price in Company Currency', store=True)
 
 
-class account_invoice(orm.Model):
+class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for inv in self.browse(cr, uid, ids, context=context):
-            if inv.currency_id == inv.company_id.currency_id:
-                # No currency conversion required
-                result[inv.id] = {
-                    'amount_untaxed_company_currency': inv.amount_untaxed,
-                    'amount_total_company_currency': inv.amount_total,
-                }
-            else:
-                # Convert on the date of the invoice
-                cc_ctx = context.copy()
-                if inv.date_invoice:
-                    cc_ctx['date'] = inv.date_invoice
-                result[inv.id] = {
-                    'amount_untaxed_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, inv.currency_id.id,
-                        inv.company_id.currency_id.id, inv.amount_untaxed,
-                        context=cc_ctx),
-                    'amount_total_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, inv.currency_id.id,
-                        inv.company_id.currency_id.id, inv.amount_total,
-                        context=cc_ctx)
-                }
-        #print "result =", result
-        return result
+    @api.one
+    @api.depends(
+        'currency_id', 'move_id', 'date_invoice', 'type', 'company_id',
+        'amount_untaxed', 'amount_total')
+    def _compute_amount_in_company_currency(self):
+        # Convert on the date of the invoice
+        sign = 1
+        if self.type in ('out_refund', 'in_refund'):
+            sign = -1
+        self.amount_untaxed_company_currency = self.currency_id.with_context(
+            date=self.date_invoice, disable_rate_date_check=True).compute(
+                self.amount_untaxed, self.company_id.currency_id) * sign
+        self.amount_total_company_currency = self.currency_id.with_context(
+            date=self.date_invoice, disable_rate_date_check=True).compute(
+                self.amount_total, self.company_id.currency_id) * sign
 
-    def _bi_get_invoice_line(self, cr, uid, ids, context=None):
-        return self.pool['account.invoice']._get_invoice_line(
-            cr, uid, ids, context=context)
-
-    def _bi_get_invoice_tax(self, cr, uid, ids, context=None):
-        return self.pool['account.invoice']._get_invoice_tax(
-            cr, uid, ids, context=context)
-
-    _columns = {
-        'amount_untaxed_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyinvoice',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Untaxed in Company Currency', store={
-                'account.invoice': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['invoice_line', 'currency_id'], 20),
-                'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
-                'account.invoice.line': (
-                    _bi_get_invoice_line, [
-                        'price_unit',
-                        'invoice_line_tax_id',
-                        'quantity',
-                        'discount'], 20),
-            }),
-        'amount_total_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencyinvoice',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Total in Company Currency', store={
-                'account.invoice': (
-                    lambda self, cr, uid, ids, c={}:
-                    ids, ['invoice_line', 'currency_id'], 20),
-                'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
-                'account.invoice.line': (
-                    _bi_get_invoice_line, [
-                        'price_unit',
-                        'invoice_line_tax_id',
-                        'quantity',
-                        'discount'], 20),
-            }),
-        'company_currency_id': fields.related(
-            'company_id', 'currency_id', readonly=True, type='many2one',
-            relation='res.currency', string="Company Currency"),
-    }
+    amount_untaxed_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total Untaxed in Company Currency', store=True,
+        help='The amount is negative for a refund')
+    amount_total_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total in Company Currency', store=True,
+        help='The amount is negative for a refund')
+    company_currency_id = fields.Many2one(
+        'res.currency', related='company_id.currency_id', readonly=True,
+        string="Company Currency")

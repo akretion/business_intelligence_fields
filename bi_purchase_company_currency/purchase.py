@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_purchase_company_currency module for OpenERP
-#    Copyright (C) 2014 Akretion (http://www.akretion.com/)
+#    bi_purchase_company_currency module for Odoo
+#    Copyright (C) 2014-2015 Akretion (http://www.akretion.com/)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,157 +20,67 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields, api
 import openerp.addons.decimal_precision as dp
 
 
-class purchase_order_line(orm.Model):
+class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for po_line in self.browse(cr, uid, ids, context=context):
-            src_cur = (
-                po_line.order_id and po_line.order_id.currency_id.id
-                or False)
-            company_cur = (
-                po_line.order_id and
-                po_line.order_id.company_id.currency_id.id or False)
-            # We need to test if src_cur exists, because po_line.order_id
-            # may be False during a small amount (if the SO is created by
-            # code and the code create lines first and then the order
-            if src_cur and src_cur == company_cur:
-                # No currency conversion required
-                result[po_line.id] = {
-                    'price_subtotal_company_currency': po_line.price_subtotal,
-                    'price_unit_company_currency': po_line.price_unit,
-                }
-            elif src_cur:
-                # Convert on the date of the order
-                cc_ctx = context.copy()
-                if po_line.order_id.date_order:
-                    cc_ctx['date'] = po_line.order_id.date_order
-                result[po_line.id] = {
-                    'price_subtotal_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        po_line.price_subtotal, context=cc_ctx),
-                    'price_unit_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        po_line.price_unit, context=cc_ctx)
-                }
-            else:
-                result[po_line.id] = {
-                    'price_subtotal_company_currency': False,
-                    'price_unit_company_currency': False,
-                }
-        #print "result =", result
-        return result
+    @api.one
+    @api.depends(
+        'order_id.currency_id', 'order_id.date_order', 'order_id.company_id',
+        'price_unit', 'price_subtotal')
+    def _compute_amount_in_company_currency(self):
+        price_subtotal_cc = 0.0
+        price_unit_cc = 0.0
+        if self.order_id:
+            price_subtotal_cc = self.order_id.currency_id.with_context(
+                date=self.order_id.date_order,
+                disable_rate_date_check=True).compute(
+                    self.price_subtotal,
+                    self.order_id.company_id.currency_id)
+            price_unit_cc = self.order_id.currency_id.with_context(
+                date=self.order_id.date_order,
+                disable_rate_date_check=True).compute(
+                    self.price_unit,
+                    self.order_id.company_id.currency_id)
+        self.price_subtotal_company_currency = price_subtotal_cc
+        self.price_unit_company_currency = price_unit_cc
 
-    def _get_polines_from_orders(self, cr, uid, ids, context=None):
-        return self.pool['purchase.order.line'].search(
-            cr, uid, [('order_id', 'in', ids)], context=context)
-
-    _columns = {
-        'price_subtotal_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencypoline',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Subtotal in Company Currency', store={
-                'purchase.order.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'product_qty', 'order_id', 'tax_id'],
-                    10),
-                'purchase.order': (
-                    _get_polines_from_orders, ['date_order', 'pricelist_id'],
-                    20),
-            }),
-        'price_unit_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencypoline',
-            type='float', digits_compute=dp.get_precision('Product Price'),
-            string='Unit price in Company Currency', store={
-                'purchase.order.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'order_id'], 10),
-                'purchase.order': (
-                    _get_polines_from_orders, ['date_order', 'pricelist_id'],
-                    20),
-                }),
-    }
+    price_subtotal_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Subtotal in Company Currency', store=True)
+    price_unit_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Product Price'),
+        string='Unit price in Company Currency', store=True)
 
 
-class purchase_order(orm.Model):
+class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for so in self.browse(cr, uid, ids, context=context):
-            if so.currency_id == so.company_id.currency_id:
-                # No currency conversion required
-                result[so.id] = {
-                    'amount_untaxed_company_currency': so.amount_untaxed,
-                    'amount_total_company_currency': so.amount_total,
-                }
-            else:
-                # Convert on the date of the SO
-                cc_ctx = context.copy()
-                if so.date_order:
-                    cc_ctx['date'] = so.date_order
-                result[so.id] = {
-                    'amount_untaxed_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, so.currency_id.id,
-                        so.company_id.currency_id.id, so.amount_untaxed,
-                        context=cc_ctx),
-                    'amount_total_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, so.currency_id.id,
-                        so.company_id.currency_id.id, so.amount_total,
-                        context=cc_ctx)
-                }
-        #print "result =", result
-        return result
+    @api.one
+    @api.depends(
+        'currency_id', 'date_order', 'company_id', 'amount_untaxed',
+        'amount_total')
+    def _compute_amount_in_company_currency(self):
+        self.amount_untaxed_company_currency = self.currency_id.with_context(
+            date=self.date_order, disable_rate_date_check=True).compute(
+                self.amount_untaxed, self.company_id.currency_id)
+        self.amount_total_company_currency = self.currency_id.with_context(
+            date=self.date_order, disable_rate_date_check=True).compute(
+                self.amount_total, self.company_id.currency_id)
 
-    def _bi_get_purchase_order_line(self, cr, uid, ids, context=None):
-        return self.pool['purchase.order']._get_order(
-            cr, uid, ids, context=context)
-
-    _columns = {
-        'amount_untaxed_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencypo',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Untaxed in Company Currency', store={
-                'purchase.order': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['order_line', 'date_order', 'pricelist_id'], 20),
-                'purchase.order.line': (
-                    _bi_get_purchase_order_line, [
-                        'price_unit',
-                        'tax_id',
-                        'product_uom_qty',
-                        'discount'], 20),
-            }),
-        'amount_total_company_currency': fields.function(
-            _compute_amount_in_company_currency, multi='currencypo',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Total in Company Currency', store={
-                'purchase.order': (
-                    lambda self, cr, uid, ids, c={}:
-                    ids, ['order_line', 'date_order', 'pricelist_id'], 20),
-                'purchase.order.line': (
-                    _bi_get_purchase_order_line, [
-                        'price_unit',
-                        'taxes_id',
-                        'product_qty',
-                        ], 20),
-            }),
-        'company_currency_id': fields.related(
-            'company_id', 'currency_id', readonly=True, type='many2one',
-            relation='res.currency', string="Company Currency"),
-    }
+    amount_untaxed_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Untaxed in Company Currency', store=True)
+    amount_total_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total in Company Currency', store=True)
+    company_currency_id = fields.Many2one(
+        'res.currency', related='company_id.currency_id', readonly=True,
+        string="Company Currency")

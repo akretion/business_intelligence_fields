@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-    Copyright (C) 2011-2014 Akretion (http://www.akretion.com/)
+    Copyright (C) 2011-2015 Akretion (http://www.akretion.com/)
     @author Alexis de Lattre <alexis.delattre@akretion.com>
     The licence is in the file __openerp__.py
 -->
@@ -15,10 +15,7 @@
     <field name="model">account.invoice.line</field>
     <field name="inherit_id" ref="account.view_invoice_line_form" />
     <field name="arch" type="xml">
-        <field name="invoice_line_tax_id" position="after">
-<!--            <separator string="Converted amounts" colspan="4" />
-Space is too limited on invoice line form view in v6.1
- -->
+        <field name="discount" position="after">
             <field name="price_unit_company_currency" />
             <field name="price_subtotal_company_currency" />
         </field>
@@ -32,10 +29,18 @@ Space is too limited on invoice line form view in v6.1
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
         <field name="move_id" position="after">
-            <field name="company_currency_id" invisible="True"/>
-            <field name="amount_untaxed_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}"/>
-            <field name="amount_total_company_currency" widget="monetary" options="{'currency_field': 'company_currency_id'}"/>
+            <field name="company_currency_id" invisible="1"/>
+            <field name="amount_untaxed_company_currency"
+                widget="monetary"
+                options="{'currency_field': 'company_currency_id'}"/>
+            <field name="amount_total_company_currency"
+                widget="monetary"
+                options="{'currency_field': 'company_currency_id'}"/>
         </field>
+        <xpath expr="//field[@name='invoice_line']/tree/field[@name='price_subtotal']" position="after">
+            <field name="price_unit_company_currency" groups="base.group_no_one"/>
+            <field name="price_subtotal_company_currency" groups="base.group_no_one"/>
+        </xpath>
     </field>
 </record>
 
@@ -46,8 +51,13 @@ Space is too limited on invoice line form view in v6.1
     <field name="inherit_id" ref="account.invoice_supplier_form" />
     <field name="arch" type="xml">
         <xpath expr="//group/field[@name='company_id']" position="after">
-            <field name="amount_untaxed_company_currency" />
-            <field name="amount_total_company_currency" />
+            <field name="company_currency_id" invisible="1"/>
+            <field name="amount_untaxed_company_currency"
+                widget="monetary"
+                options="{'currency_field': 'company_currency_id'}"/>
+            <field name="amount_total_company_currency"
+                widget="monetary"
+                options="{'currency_field': 'company_currency_id'}"/>
         </xpath>
     </field>
 </record>

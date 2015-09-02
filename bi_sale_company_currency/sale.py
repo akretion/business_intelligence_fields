@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_sale_company_currency module for OpenERP
-#    Copyright (C) 2014 Akretion (http://www.akretion.com/)
+#    bi_sale_company_currency module for Odoo
+#    Copyright (C) 2014-2015 Akretion (http://www.akretion.com/)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,166 +20,75 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields, api
 import openerp.addons.decimal_precision as dp
 
 
-class sale_order_line(orm.Model):
+class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for so_line in self.browse(cr, uid, ids, context=context):
-            src_cur = (
-                so_line.order_id and so_line.order_id.currency_id.id
-                or False)
-            company_cur = (
-                so_line.order_id and
-                so_line.order_id.company_id.currency_id.id or False)
-            # We need to test if src_cur exists, because so_line.order_id
-            # may be False during a small amount (if the SO is created by
-            # code and the code create lines first and then the sale.order
-            if src_cur and src_cur == company_cur:
-                # No currency conversion required
-                result[so_line.id] = {
-                    'price_subtotal_company_currency': so_line.price_subtotal,
-                    'price_unit_company_currency': so_line.price_unit,
-                }
-            elif src_cur:
-                # Convert on the date of the sale order
-                cc_ctx = context.copy()
-                if so_line.order_id.date_order:
-                    cc_ctx['date'] = so_line.order_id.date_order
-                result[so_line.id] = {
-                    'price_subtotal_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        so_line.price_subtotal, context=cc_ctx),
-                    'price_unit_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, src_cur, company_cur,
-                        so_line.price_unit, context=cc_ctx)
-                }
-            else:
-                result[so_line.id] = {
-                    'price_subtotal_company_currency': False,
-                    'price_unit_company_currency': False,
-                }
-        return result
+    @api.one
+    @api.depends(
+        'order_id.pricelist_id', 'order_id.date_order', 'order_id.company_id',
+        'price_unit', 'price_subtotal')
+    def _compute_amount_in_company_currency(self):
+        # self.order_id may be False during a small amount of time
+        # (if the SO is created by code and the code create lines first
+        # and then the sale.order
+        price_subtotal_cc = 0.0
+        price_unit_cc = 0.0
+        if self.order_id and self.order_id.currency_id:
+            price_subtotal_cc = self.order_id.currency_id.with_context(
+                date=self.order_id.date_order,
+                disable_rate_date_check=True).compute(
+                    self.price_subtotal,
+                    self.order_id.company_id.currency_id)
+            price_unit_cc = self.order_id.currency_id.with_context(
+                date=self.order_id.date_order,
+                disable_rate_date_check=True).compute(
+                    self.price_unit,
+                    self.order_id.company_id.currency_id)
+        self.price_subtotal_company_currency = price_subtotal_cc
+        self.price_unit_company_currency = price_unit_cc
 
-    def __compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        return self._compute_amount_in_company_currency(
-            cr, uid, ids, name, arg, context=context)
-
-    def _get_solines_from_orders(self, cr, uid, ids, context=None):
-        return self.pool['sale.order.line'].search(
-            cr, uid, [('order_id', 'in', ids)], context=context)
-
-    _columns = {
-        'price_subtotal_company_currency': fields.function(
-            __compute_amount_in_company_currency, multi='currencysoline',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Subtotal in Company Currency', store={
-                'sale.order.line': (
-                    lambda self, cr, uid, ids, c={}: ids, [
-                        'price_unit', 'product_uom_qty', 'discount',
-                        'order_id', 'tax_id'
-                    ], 10),
-                'sale.order': (
-                    _get_solines_from_orders,
-                    ['date_order', 'pricelist_id'], 20),
-            }),
-        'price_unit_company_currency': fields.function(
-            __compute_amount_in_company_currency, multi='currencysoline',
-            type='float', digits_compute=dp.get_precision('Product Price'),
-            string='Unit price in Company Currency', store={
-                'sale.order.line': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'order_id'], 10),
-                'sale.order': (
-                    _get_solines_from_orders,
-                    ['date_order', 'pricelist_id'], 20),
-                }),
-    }
+    price_subtotal_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Subtotal in Company Currency', store=True)
+    price_unit_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Product Price'),
+        string='Unit price in Company Currency', store=True)
 
 
-class sale_order(orm.Model):
+class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    def _compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        if context is None:
-            context = {}
-        result = {}
-        for so in self.browse(cr, uid, ids, context=context):
-            if so.currency_id == so.company_id.currency_id:
-                # No currency conversion required
-                result[so.id] = {
-                    'amount_untaxed_company_currency': so.amount_untaxed,
-                    'amount_total_company_currency': so.amount_total,
-                }
-            else:
-                # Convert on the date of the SO
-                cc_ctx = context.copy()
-                if so.date_order:
-                    cc_ctx['date'] = so.date_order
-                result[so.id] = {
-                    'amount_untaxed_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, so.currency_id.id,
-                        so.company_id.currency_id.id, so.amount_untaxed,
-                        context=cc_ctx),
-                    'amount_total_company_currency':
-                    self.pool['res.currency'].compute(
-                        cr, uid, so.currency_id.id,
-                        so.company_id.currency_id.id, so.amount_total,
-                        context=cc_ctx)
-                }
-        return result
+    @api.one
+    @api.depends(
+        'pricelist_id', 'date_order', 'amount_untaxed', 'amount_total',
+        'company_id')
+    def _compute_amount_in_company_currency(self):
+        amount_untaxed_cc = 0.0
+        amount_total_cc = 0.0
+        if self.currency_id:
+            amount_untaxed_cc = self.currency_id.with_context(
+                date=self.date_order, disable_rate_date_check=True).compute(
+                    self.amount_untaxed, self.company_id.currency_id)
+            amount_total_cc = self.currency_id.with_context(
+                date=self.date_order, disable_rate_date_check=True).compute(
+                    self.amount_total, self.company_id.currency_id)
+        self.amount_untaxed_company_currency = amount_untaxed_cc
+        self.amount_total_company_currency = amount_total_cc
 
-    def __compute_amount_in_company_currency(
-            self, cr, uid, ids, name, arg, context=None):
-        return self._compute_amount_in_company_currency(
-            cr, uid, ids, name, arg, context=context)
-
-    def _bi_get_sale_order_line(self, cr, uid, ids, context=None):
-        return self.pool['sale.order']._get_order(
-            cr, uid, ids, context=context)
-
-    _columns = {
-        'amount_untaxed_company_currency': fields.function(
-            __compute_amount_in_company_currency, multi='currencyso',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Untaxed in Company Currency', store={
-                'sale.order': (
-                    lambda self, cr, uid, ids, c={}: ids,
-                    ['order_line', 'date_order', 'pricelist_id'], 20),
-                'sale.order.line': (
-                    _bi_get_sale_order_line, [
-                        'price_unit',
-                        'tax_id',
-                        'product_uom_qty',
-                        'discount'], 20),
-            }),
-        'amount_total_company_currency': fields.function(
-            __compute_amount_in_company_currency, multi='currencyso',
-            type='float', digits_compute=dp.get_precision('Account'),
-            string='Total in Company Currency', store={
-                'sale.order': (
-                    lambda self, cr, uid, ids, c={}:
-                    ids, ['order_line', 'date_order', 'pricelist_id'], 20),
-                'sale.order.line': (
-                    _bi_get_sale_order_line, [
-                        'price_unit',
-                        'tax_id',
-                        'product_uom_qty',
-                        'discount'], 20),
-            }),
-        'company_currency_id': fields.related(
-            'company_id', 'currency_id', readonly=True, type='many2one',
-            relation='res.currency', string="Company Currency"),
-    }
+    amount_untaxed_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Untaxed in Company Currency', store=True)
+    amount_total_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total in Company Currency', store=True)
+    company_currency_id = fields.Many2one(
+        'res.currency', related='company_id.currency_id', readonly=True,
+        string="Company Currency")

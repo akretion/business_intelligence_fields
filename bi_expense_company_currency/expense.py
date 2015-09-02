@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_expense_company_currency module for OpenERP
-#    Copyright (C) 2012 Akretion (http://www.akretion.com/) All Rights Reserved
+#    bi_expense_company_currency module for Odoo
+#    Copyright (C) 2012-2015 Akretion (http://www.akretion.com/)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,79 +20,83 @@
 #
 ##############################################################################
 
-from osv import osv, fields
-from tools import config
-import decimal_precision as dp
+from openerp import models, fields, api
+import openerp.addons.decimal_precision as dp
 
-class hr_expense_line(osv.osv):
+
+class HrExpenseLine(models.Model):
     _inherit = "hr.expense.line"
 
-    def _compute_amount_in_company_currency(self, cr, uid, ids, name, arg, context=None):
-        result = {}
-        for exp_line in self.browse(cr, uid, ids, context=context):
-            src_cur = exp_line.expense_id and exp_line.expense_id.currency_id.id or False
-            company_cur = exp_line.expense_id and exp_line.expense_id.company_id.currency_id.id or False
-            if src_cur and src_cur == company_cur:
-                # No currency conversion required
-                result[exp_line.id] = {
-                    'total_amount_company_currency': exp_line.total_amount,
-                    'amount_untaxed_company_currency': exp_line.amount_untaxed,
-                    'unit_amount_company_currency': exp_line.unit_amount,
-                }
-            elif src_cur:
-                # Convert on the date of the expense
-                if exp_line.expense_id.date:
-                    context['date'] = exp_line.expense_id.date
-                    context['disable_rate_date_check'] = True
-                result[exp_line.id] = {
-                    'total_amount_company_currency': self.pool.get('res.currency').compute(cr, uid, src_cur, company_cur, exp_line.total_amount, context=context),
-                    'amount_untaxed_company_currency': self.pool.get('res.currency').compute(cr, uid, src_cur, company_cur, exp_line.amount_untaxed, context=context),
-                    'unit_amount_company_currency': self.pool.get('res.currency').compute(cr, uid, src_cur, company_cur, exp_line.unit_amount, context=context)
-                }
-            else:
-                result[exp_line.id] = {
-                    'total_amount_company_currency': False,
-                    'amount_untaxed_company_currency': False,
-                    'unit_amount_company_currency': False,
-                }
-        #print "result =", result
-        return result
+    @api.one
+    @api.depends(
+        'expense_id.date_confirm', 'expense_id.company_id',
+        'expense_id.currency_id', 'expense_id.account_move_id',
+        'total_amount', 'amount_untaxed', 'unit_amount')
+    def _compute_amount_in_company_currency(self):
+        total_amount_cc = 0.0
+        amount_untaxed_cc = 0.0
+        unit_amount_cc = 0.0
+        if self.expense_id:
+            # We convert on date = date_confirm because date_confirm is the
+            # date of the account move
+            total_amount_cc = self.expense_id.currency_id.with_context(
+                date=self.expense_id.date_confirm,
+                disable_rate_date_check=True).compute(
+                    self.total_amount,
+                    self.expense_id.company_id.currency_id)
+            amount_untaxed_cc = self.expense_id.currency_id.with_context(
+                date=self.expense_id.date_confirm,
+                disable_rate_date_check=True).compute(
+                    self.amount_untaxed,
+                    self.expense_id.company_id.currency_id)
+            unit_amount_cc = self.expense_id.currency_id.with_context(
+                date=self.expense_id.date_confirm,
+                disable_rate_date_check=True).compute(
+                    self.unit_amount,
+                    self.expense_id.company_id.currency_id)
+        self.total_amount_company_currency = total_amount_cc
+        self.amount_untaxed_company_currency = amount_untaxed_cc
+        self.unit_amount_company_currency = unit_amount_cc
 
-    def _get_expense_lines_from_expenses(self, cr, uid, ids, context=None):
-        return self.pool.get('hr.expense.line').search(cr, uid, [('expense_id', 'in', ids)], context=context)
+    total_amount_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total Amount in Company Currency', store=True)
+    amount_untaxed_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Untaxed Amount in Company Currency', store=True)
+    unit_amount_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Unit Price in Company Currency', store=True)
 
-    def _get_expense_lines_from_currency_rates(self, cr, uid, ids, context=None):
-        #print "_get_expense_lines_from_currency_rates IDS=", ids
-        currencies_ids = self.read(cr, uid, ids, ['currency_id'], context=context)
-        #print "currencies_ids=", currencies_ids
-        currency_list = []
-        for currency in currencies_ids:
-            if currency['currency_id'][0] not in currency_list:
-                currency_list.append(currency['currency_id'][0])
-        #print "currency_list=", currency_list
-        expense_ids = self.pool.get('hr.expense.expense').search(cr, uid, [('currency_id', 'in', currency_list)], context=context)
-        #print "expense_ids =", expense_ids
-        res = self.pool.get('hr.expense.line').search(cr, uid, [('expense_id', 'in', expense_ids)], context=context)
-        #print "res=", res
-        return res
 
-    _columns = {
-        'total_amount_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Total amount in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
-            }),
-        'amount_untaxed_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Total untaxed in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
-            }),
-        'unit_amount_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Unit price in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
-            }),
-    }
+class HrExpenseExpense(models.Model):
+    _inherit = 'hr.expense.expense'
 
-hr_expense_line()
+    @api.one
+    @api.depends(
+        'date_confirm', 'company_id', 'currency_id', 'account_move_id',
+        'amount', 'amount_untaxed')
+    def _compute_amount_in_company_currency(self):
+        self.amount_untaxed_company_currency = self.currency_id.with_context(
+            date=self.date_confirm,
+            disable_rate_date_check=True).compute(
+                self.amount_untaxed, self.company_id.currency_id)
+        self.amount_company_currency = self.currency_id.with_context(
+            date=self.date_confirm,
+            disable_rate_date_check=True).compute(
+                self.amount, self.company_id.currency_id)
 
+    amount_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total in Company Currency', store=True)
+    amount_untaxed_company_currency = fields.Float(
+        compute='_compute_amount_in_company_currency',
+        digits=dp.get_precision('Account'),
+        string='Total Untaxed in Company Currency', store=True)
+    company_currency_id = fields.Many2one(
+        'res.currency', related='company_id.currency_id', readonly=True,
+        string="Company Currency")
