@@ -31,6 +31,10 @@ it adds the amount in company currency on the invoices and invoice lines.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['account'],
-    'data': ['invoice_view.xml'],
+    'data': [
+        'invoice_view.xml',
+        'report/invoice_report_view.xml',
+        'security/ir.model.access.csv',
+        ],
     'installable': True,
 }

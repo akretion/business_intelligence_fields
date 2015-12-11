@@ -29,5 +29,16 @@
     </field>
 </record>
 
+<record id="view_order_line_tree" model="ir.ui.view">
+    <field name="name">bi.cc.sale.order.line.tree</field>
+    <field name="model">sale.order.line</field>
+    <field name="inherit_id" ref="sale.view_order_line_tree" />
+    <field name="arch" type="xml">
+        <field name="price_subtotal" position="after">
+            <field name="price_subtotal_company_currency" sum="Total in Company Currency"/>
+        </field>
+    </field>
+</record>
+
 </data>
 </openerp>
