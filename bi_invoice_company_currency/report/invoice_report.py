@@ -53,7 +53,7 @@ class AccountInvoiceReportBi(models.Model):
         'product.category', 'Category of Product', readonly=True)
     journal_id = fields.Many2one(
         'account.journal', string='Journal', readonly=True)
-    # I put only the field commercial_partner_id to avoid confusiing the users
+    # I put only the field commercial_partner_id to avoid confusing the users
     # with 2 fields partner_id and commercial_partner_id
     commercial_partner_id = fields.Many2one(
         'res.partner', 'Partner Company', help="Commercial Entity")

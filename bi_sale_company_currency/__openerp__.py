@@ -31,6 +31,10 @@ it adds the amount in company currency on the sale order lines.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['sale'],
-    'data': ['sale_view.xml'],
+    'data': [
+        'sale_view.xml',
+        'report/sale_report_view.xml',
+        'security/ir.model.access.csv',
+        ],
     'installable': True,
 }

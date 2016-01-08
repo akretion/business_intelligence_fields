@@ -47,7 +47,7 @@
     <field name="name">Invoices Analysis</field>
     <field name="res_model">account.invoice.report.bi</field>
     <field name="view_mode">graph</field>
-    <field name="context">{'search_default_customer':1, 'group_by':[], 'group_by_no_leaf':1, 'search_default_year': 1}</field>
+    <field name="context">{'search_default_customer':1, 'group_by':[], 'group_by_no_leaf':1, 'search_default_thisyear': 1}</field>
 </record>
 
 <record id="account.menu_action_account_invoice_report_all" model="ir.ui.menu">

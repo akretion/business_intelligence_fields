@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+<record id="sale_report_bi_graph" model="ir.ui.view">
+    <field name="name">sale.report.bi.graph</field>
+    <field name="model">sale.report.bi</field>
+    <field name="arch" type="xml">
+        <graph string="Sales Analysis" type="pivot">
+            <field name="categ_id" type="row"/>
+            <field name="date_confirm" type="col"/>
+            <field name="amount_company_currency" type="measure"/>
+        </graph>
+    </field>
+</record>
+
+<record id="sale_report_bi_search" model="ir.ui.view">
+    <field name="name">sale.report.bi.search</field>
+    <field name="model">sale.report.bi</field>
+    <field name="arch" type="xml">
+        <search string="Sales Analysis">
+            <field name="date_confirm"/>
+            <filter string="This Year" name="thisyear" domain="[('date_confirm','&lt;=', time.strftime('%%Y-12-31')),('date_confirm','&gt;=',time.strftime('%%Y-01-01'))]" help="Sale orders confirmed this year"/>
+            <field name="commercial_partner_id" />
+            <field name="user_id" />
+            <field name="categ_id" filter_domain="[('categ_id', 'child_of', self)]"/>
+            <group expand="1" string="Group By">
+                <filter string="Partner" name="commercial_partner_id" context="{'group_by': 'commercial_partner_id'}"/>
+                <filter string="Salesperson" name="user_id" context="{'group_by': 'user_id'}"/>
+                <filter string="Category of Product" name="category_product" context="{'group_by': 'categ_id'}"/>
+                <filter string="Order Status" context="{'group_by': 'state'}"/>
+                <filter string="Company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                <filter string="Date Confirm" context="{'group_by': 'date_confirm:month'}"/>
+            </group>
+        </search>
+    </field>
+</record>
+
+<record id="sale_report_bi_action" model="ir.actions.act_window">
+    <field name="name">Sales Analysis</field>
+    <field name="res_model">sale.report.bi</field>
+    <field name="view_mode">graph</field>
+    <field name="context">{'search_default_thisyear': 1, 'group_by':[], 'group_by_no_leaf':1}</field>
+</record>
+
+<record id="sale.menu_report_product_all" model="ir.ui.menu">
+    <field name="action" ref="sale_report_bi_action"/>
+</record>
+
+</data>
+</openerp>
