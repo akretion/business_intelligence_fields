@@ -11,14 +11,16 @@
 <record id="view_generate_time_dimension" model="ir.ui.view">
     <field name="name">generate_time_dimension_view</field>
     <field name="model">generate.time.dimension</field>
-    <field name="type">form</field>
     <field name="arch" type="xml">
-        <form string="Generate time dimension">
-             <field name="start_date" />
-             <field name="end_date" />
-             <newline />
-             <button icon="gtk-cancel" special="cancel" string="Cancel" colspan="2"/>
-             <button icon="gtk-ok" name="button_run" string="Create Time Dimension" type="object" colspan="2"/>
+        <form string="Re-create Time Dimension">
+            <group name="main">
+                <field name="start_date" />
+                 <field name="end_date" />
+            </group>
+            <footer>
+                <button name="generate_table" string="Re-create Time Dimension" type="object" class="oe_highlight"/>
+                <button special="cancel" string="Cancel" class="oe_link"/>
+            </footer>
        </form>
     </field>
 </record>
@@ -27,13 +29,12 @@
 <record id="action_generate_time_dimension" model="ir.actions.act_window">
     <field name="name">Create Time Dimension</field>
     <field name="res_model">generate.time.dimension</field>
-    <field name="view_type">form</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>
 </record>
 
 
-<menuitem id="menu_buiness_intelligence" parent="base.menu_custom" name="Business Intelligence" sequence="100" />
+<menuitem id="menu_buiness_intelligence" parent="base.menu_custom" name="Business Intelligence" sequence="200" />
 
 <menuitem id="menu_generate_time_dimension" parent="menu_buiness_intelligence" action="action_generate_time_dimension" />
 
