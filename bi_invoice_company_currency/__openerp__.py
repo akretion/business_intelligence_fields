@@ -24,10 +24,20 @@
 {
     'name': 'Business intelligence - Invoice in company currency',
     'version': '0.2',
+    'summary': 'Adds fields on invoice and invoice lines for business intelligence',
     'category': 'Accounting & Finance',
     'license': 'AGPL-3',
-    'description': """This module adds some fields required to do business intelligence :
-it adds the amount in company currency on the invoices and invoice lines.""",
+    'description': """
+BI Invoice Company Currency
+===========================
+
+This modules adds several stored computed fields:
+
+* on invoice line: price_subtotal_company_currency and price_unit_company_currency
+
+* in invoice: amount_untaxed_company_currency and amount_total_company_currency
+
+This module also replaces the object *account.invoice.report* (used by the menu entry *Reporting > Accounting > Invoice Analysis*) by another object *account.invoice.report.bi* that uses the new stored computed fields.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['account'],

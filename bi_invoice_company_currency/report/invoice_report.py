@@ -38,9 +38,10 @@ class AccountInvoiceReportBi(models.Model):
     amount_company_currency = fields.Float(
         string='Amount Without Tax', readonly=True,
         digits=dp.get_precision('Account'))
-    # TODO : add support for UoM and UoM conversion ?
-    # uom_name = fields.Char(
-    #    string='Reference Unit of Measure', size=128, readonly=True)
+    uom_id = fields.Many2one(
+        'product.uom', string='Unit of Measure', readonly=True,
+        help="Unit of measure of the product (may be different from the "
+        "unit of measure used in some invoice lines)")
     payment_term = fields.Many2one(
         'account.payment.term', string='Payment Term', readonly=True)
     period_id = fields.Many2one(
@@ -91,22 +92,22 @@ class AccountInvoiceReportBi(models.Model):
         ],
         'product.product': ['product_tmpl_id'],
         'product.template': ['categ_id'],
-        # 'product.uom': ['category_id', 'factor', 'name', 'uom_type'],
+        'product.uom': ['category_id', 'factor', 'name', 'uom_type'],
         'res.partner': ['country_id'],
     }
 
-    # TODO : check that the sum works on quantity with refunds
     def _select(self):
         select = """
         SELECT min(ail.id) AS id,
         ai.date_invoice AS date_invoice,
         ai.number AS invoice_number,
         ail.product_id AS product_id,
-        CASE WHEN ai.type IN ('out_refund', 'in_refund')
-        THEN sum(ail.quantity * -1)
-        ELSE sum(ail.quantity)
-        END
+        sum(CASE WHEN ai.type IN ('out_refund', 'in_refund')
+            THEN - ail.quantity * uom_product.factor / uom_inv.factor
+            ELSE ail.quantity * uom_product.factor / uom_inv.factor
+            END)
         AS product_qty,
+        pt.uom_id AS uom_id,
         ai.payment_term AS payment_term,
         ai.period_id AS period_id,
         ai.fiscal_position AS fiscal_position,
@@ -131,8 +132,9 @@ class AccountInvoiceReportBi(models.Model):
             LEFT JOIN account_invoice ai ON ail.invoice_id = ai.id
             LEFT JOIN product_product pp ON ail.product_id=pp.id
             LEFT JOIN product_template pt ON pp.product_tmpl_id=pt.id
-            LEFT JOIN product_uom pu ON pu.id = pt.uom_id
             LEFT JOIN res_partner rp ON rp.id = ai.commercial_partner_id
+            LEFT JOIN product_uom uom_inv ON uom_inv.id = ail.uos_id
+            LEFT JOIN product_uom uom_product ON uom_product.id = pt.uom_id
         """
         return from_sql
 
@@ -145,7 +147,8 @@ class AccountInvoiceReportBi(models.Model):
         GROUP BY ai.date_invoice, ai.number, ail.product_id, ai.payment_term,
         ai.period_id, ai.fiscal_position, ai.currency_id, pt.categ_id,
         ai.journal_id, ai.commercial_partner_id, ai.company_id, ai.user_id,
-        ai.type, ai.state, ai.date_due, ail.account_id, rp.country_id
+        ai.type, ai.state, ai.date_due, ail.account_id, rp.country_id,
+        pt.uom_id
         """
         return group_by
 
