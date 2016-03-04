@@ -27,7 +27,9 @@
     'version': '0.1',
     'category': 'Tools',
     'license': 'AGPL-3',
-    'description': """This module adds a wizard to generate the time dimension for OLAP.
+    'description': """This module adds a wizard to generate the time dimension for business intelligence.
+
+By default, it will create the time dimension table in the Odoo database. If you have a bi_dsn entry in your Odoo server configuration file, it will create a time dimension table in the designated external database.
 
 This module has been written by Alexis de Lattre from Akretion
 <alexis.delattre@akretion.com>.

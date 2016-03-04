@@ -20,14 +20,14 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
+from openerp import models, fields, api, tools, _
 from openerp.exceptions import ValidationError
 import logging
 from dateutil.relativedelta import relativedelta
+import psycopg2
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 TIME_DIMENSION_TABLE = 'bi_time_dimension'
-# Ideas : map to fiscal year ?
 
 
 class GenerateTimeDimension(models.TransientModel):
@@ -47,9 +47,20 @@ class GenerateTimeDimension(models.TransientModel):
     @api.multi
     def generate_table(self):
         self.ensure_one()
+        bi_dsn = tools.config.get('bi_dsn')
+        # bi_dsn should somethink like:
+        # host='192.168.12.42' dbname='bi' user='odoo' password='azerty'
+        if bi_dsn:
+            conn = psycopg2.connect(bi_dsn)
+            cr = conn.cursor()
+            logger.info('Starting to create BI time dimension in BI database')
+        else:
+            cr = self._cr
+            logger.info(
+                'Starting to create BI time dimension in Odoo database')
         query_drop_table = 'DROP TABLE IF EXISTS %s' % TIME_DIMENSION_TABLE
-        _logger.debug('Executing SQL = %s' % query_drop_table)
-        self._cr.execute(query_drop_table)
+        logger.debug('Executing SQL = %s' % query_drop_table)
+        cr.execute(query_drop_table)
 
         table_cols = [
             {'name': 'date',     'dbtype': 'DATE PRIMARY KEY'},
@@ -75,8 +86,8 @@ class GenerateTimeDimension(models.TransientModel):
         query_create_table = 'CREATE TABLE %s (%s)' % (
             TIME_DIMENSION_TABLE, list_cols_with_type)
 
-        _logger.debug('Executing create table query: %s' % query_create_table)
-        self._cr.execute(query_create_table)
+        logger.debug('Executing create table query: %s' % query_create_table)
+        cr.execute(query_create_table)
 
         start_date_str = self.start_date
         end_date_str = self.end_date
@@ -90,7 +101,7 @@ class GenerateTimeDimension(models.TransientModel):
         for fy in afo.search([]):
             fy_idtocode[fy.id] = fy.code
         while cur_date <= end_date:
-            # _logger.debug("Current date = %s", cur_date)
+            # logger.debug("Current date = %s", cur_date)
             # date as timestamp
 
             # list_values = "TIMESTAMP '" + cur_date.strftime('%Y-%m-%d')
@@ -137,7 +148,14 @@ class GenerateTimeDimension(models.TransientModel):
             '%(date)s, %(year)s, %(fiscal_year)s, %(semester)s, '
             '%(quarter)s, %(month)s, %(day)s'
             )
-        _logger.debug('Insert into queries: %s' % query_insert_date)
-        self._cr.executemany(query_insert_date, list_values)
+        logger.debug('Insert into queries: %s' % query_insert_date)
+        cr.executemany(query_insert_date, list_values)
+        logger.info(
+            'Successfull creation of the table %s in the database',
+            TIME_DIMENSION_TABLE)
+        if bi_dsn:
+            conn.commit()
+            cr.close()
+            conn.close()
 
         return True
