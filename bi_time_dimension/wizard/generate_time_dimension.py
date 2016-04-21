@@ -69,6 +69,7 @@ class GenerateTimeDimension(models.TransientModel):
             {'name': 'semester', 'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'quarter',  'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'month',    'dbtype': 'VARCHAR(7) NOT NULL'},
+            {'name': 'week',     'dbtype': 'VARCHAR(8) NOT NULL'},
             {'name': 'day',      'dbtype': 'VARCHAR(10) NOT NULL'},
         ]
 
@@ -127,14 +128,17 @@ class GenerateTimeDimension(models.TransientModel):
                 cur_date.strftime('%Y'), compute[month_str]['quarter'])
             cur_date_str = fields.Date.to_string(cur_date)
             fyear_id = afo.find(dt=cur_date_str, exception=False)
+            year_str = cur_date.strftime('%Y')
+            week_str = unicode(cur_date.isocalendar()[1]).zfill(2)
 
             list_values.append({
                 'date': cur_date.strftime('%Y-%m-%d'),
-                'year': cur_date.strftime('%Y'),
+                'year': year_str,
                 'fiscal_year': fyear_id and fy_idtocode[fyear_id] or False,
                 'semester': semester,
                 'quarter': quarter,
                 'month': cur_date.strftime('%Y-%m'),
+                'week': '%s-W%s' % (year_str, week_str),
                 'day': cur_date.strftime('%Y-%m-%d'),
             })
 
@@ -146,7 +150,7 @@ class GenerateTimeDimension(models.TransientModel):
         query_insert_date = 'INSERT INTO %s (%s) VALUES (%s)' % (
             TIME_DIMENSION_TABLE, list_cols,
             '%(date)s, %(year)s, %(fiscal_year)s, %(semester)s, '
-            '%(quarter)s, %(month)s, %(day)s'
+            '%(quarter)s, %(month)s, %(week)s, %(day)s'
             )
         logger.debug('Insert into queries: %s' % query_insert_date)
         cr.executemany(query_insert_date, list_values)
