@@ -30,8 +30,9 @@
 it adds the final payment date and the total amount of down payment on the invoices.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
-    'depends': ['account'],
+    # depend on bi_invoice_company_currency to get company_currency_id
+    # but, apart from this, we only depend on 'account'
+    'depends': ['bi_invoice_company_currency'],
     'data': ['invoice_view.xml'],
     'installable': True,
-    'active': False,
 }

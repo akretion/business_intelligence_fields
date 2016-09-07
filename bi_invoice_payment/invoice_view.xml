@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-    Copyright (C) 2011 Akretion (http://www.akretion.com/)
+    Copyright (C) 2011-2016 Akretion (http://www.akretion.com/)
     @author Alexis de Lattre <alexis.delattre@akretion.com>
     The licence is in the file __openerp__.py
 -->
@@ -9,22 +9,42 @@
 <openerp>
 <data>
 
-<!-- Add fields on invoice view -->
-<record id="bi_inv_payment_invoice_form" model="ir.ui.view">
-    <field name="name">bi.fields.invoice.form</field>
+<record id="invoice_form" model="ir.ui.view">
+    <field name="name">bi_invoice_payment.invoice.form</field>
     <field name="model">account.invoice</field>
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
         <field name="payment_ids" position="after">
-            <separator string="Payment statistics" colspan="4" />
-            <field name="payment_journal_id" />
-            <field name="total_down_payment_company_currency" />
-            <field name="date_final_payment" />
-            <field name="payment_delay_days" />
-            <field name="overdue_delay_days" />
+            <group string="Payment statistics" colspan="2">
+                <field name="payment_journal_id" />
+                <field name="total_down_payment_company_currency" widget="monetary"
+                    options="{'currency_field': 'company_currency_id'}" />
+                <field name="date_final_payment" />
+                <field name="payment_delay_days" />
+                <field name="overdue_delay_days" />
+            </group>
         </field>
     </field>
 </record>
+
+<record id="invoice_supplier_form" model="ir.ui.view">
+    <field name="name">bi_invoice_payment.supplier.invoice.form</field>
+    <field name="model">account.invoice</field>
+    <field name="inherit_id" ref="account.invoice_supplier_form" />
+    <field name="arch" type="xml">
+        <field name="payment_ids" position="after">
+            <group string="Payment statistics" colspan="2">
+                <field name="payment_journal_id" />
+                <field name="total_down_payment_company_currency" widget="monetary"
+                    options="{'currency_field': 'company_currency_id'}" />
+                <field name="date_final_payment" />
+                <field name="payment_delay_days" />
+                <field name="overdue_delay_days" />
+            </group>
+        </field>
+    </field>
+</record>
+
 
 </data>
 </openerp>

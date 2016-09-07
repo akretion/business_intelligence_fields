@@ -68,6 +68,7 @@ class generate_time_dimension(orm.TransientModel):
             {'name': 'semester', 'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'quarter',  'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'month',    'dbtype': 'VARCHAR(7) NOT NULL'},
+            {'name': 'week',    'dbtype': 'VARCHAR(8) NOT NULL'},
             {'name': 'day',      'dbtype': 'VARCHAR(10) NOT NULL'},
         ]
 
@@ -122,13 +123,16 @@ class generate_time_dimension(orm.TransientModel):
                 cur_date.strftime('%Y'), compute[month_str]['semester'])
             quarter = '%s-%s' % (
                 cur_date.strftime('%Y'), compute[month_str]['quarter'])
+            year_str = cur_date.strftime('%Y')
+            week_str = unicode(cur_date.isocalendar()[1]).zfill(2)
 
             list_values.append({
                 'date': cur_date.strftime('%Y-%m-%d'),
-                'year': cur_date.strftime('%Y'),
+                'year': year_str,
                 'semester': semester,
                 'quarter': quarter,
                 'month': cur_date.strftime('%Y-%m'),
+                'week': '%s-W%s' % (year_str, week_str),
                 'day': cur_date.strftime('%Y-%m-%d'),
             })
 
@@ -137,11 +141,12 @@ class generate_time_dimension(orm.TransientModel):
             # go to next day
             cur_date += relativedelta(days=1)
         # Insert cur_date in SQL
-        from pprint import pprint
-        pprint(list_values)
+        #from pprint import pprint
+        #pprint(list_values)
         query_insert_date = 'INSERT INTO %s (%s) VALUES (%s)' % (
             TIME_DIMENSION_TABLE, list_cols,
-            '%(date)s, %(year)s, %(semester)s, %(quarter)s, %(month)s, %(day)s'
+            '%(date)s, %(year)s, %(semester)s, %(quarter)s, %(month)s, '
+            '%(week)s, %(day)s'
             )
         _logger.debug('Insert into queries: %s' % query_insert_date)
         cr.executemany(query_insert_date, list_values)
