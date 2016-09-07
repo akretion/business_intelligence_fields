@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+        <record model="ir.ui.view" id="view_order_tree">
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_tree"/>
+            <field name="arch" type="xml">
+                <field name="partner_id" position="after">
+                    <field name="commercial_partner_id" invisible="1"/>
+                </field>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="view_quotation_tree">
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_quotation_tree"/>
+            <field name="arch" type="xml">
+                <field name="partner_id" position="after">
+                    <field name="commercial_partner_id" invisible="1"/>
+                </field>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="view_sales_order_filter">
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+            <field name="arch" type="xml">
+                <filter string="Customer" position="after">
+                    <filter name="commercial_partner_id" string="Customer Company"
+                            domain="[]" context="{'group_by': 'commercial_partner_id'}"/>
+                </filter>
+            </field>
+        </record>
+    </data>
+</openerp>
