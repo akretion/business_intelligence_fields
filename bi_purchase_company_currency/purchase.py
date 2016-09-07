@@ -83,10 +83,10 @@ class purchase_order_line(orm.Model):
                 'purchase.order.line': (
                     lambda self, cr, uid, ids, c={}: ids,
                     ['price_unit', 'product_qty', 'order_id', 'tax_id'],
-                    10),
+                    100),
                 'purchase.order': (
                     _get_polines_from_orders, ['date_order', 'pricelist_id'],
-                    20),
+                    100),
             }),
         'price_unit_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencypoline',
@@ -94,10 +94,10 @@ class purchase_order_line(orm.Model):
             string='Unit price in Company Currency', store={
                 'purchase.order.line': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'order_id'], 10),
+                    ['price_unit', 'order_id'], 100),
                 'purchase.order': (
                     _get_polines_from_orders, ['date_order', 'pricelist_id'],
-                    20),
+                    100),
                 }),
     }
 
@@ -148,13 +148,14 @@ class purchase_order(orm.Model):
             string='Untaxed in Company Currency', store={
                 'purchase.order': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['order_line', 'date_order', 'pricelist_id'], 20),
+                    ['order_line', 'date_order', 'pricelist_id'], 100),
                 'purchase.order.line': (
                     _bi_get_purchase_order_line, [
                         'price_unit',
                         'tax_id',
                         'product_uom_qty',
-                        'discount'], 20),
+                        'discount',
+                        'order_id'], 100),
             }),
         'amount_total_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencypo',
@@ -162,13 +163,14 @@ class purchase_order(orm.Model):
             string='Total in Company Currency', store={
                 'purchase.order': (
                     lambda self, cr, uid, ids, c={}:
-                    ids, ['order_line', 'date_order', 'pricelist_id'], 20),
+                    ids, ['order_line', 'date_order', 'pricelist_id'], 100),
                 'purchase.order.line': (
                     _bi_get_purchase_order_line, [
                         'price_unit',
                         'taxes_id',
                         'product_qty',
-                        ], 20),
+                        'order_id',
+                        ], 100),
             }),
         'company_currency_id': fields.related(
             'company_id', 'currency_id', readonly=True, type='many2one',

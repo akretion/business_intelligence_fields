@@ -87,11 +87,11 @@ class sale_order_line(orm.Model):
                 'sale.order.line': (
                     lambda self, cr, uid, ids, c={}: ids, [
                         'price_unit', 'product_uom_qty', 'discount',
-                        'order_id', 'tax_id'
-                    ], 10),
+                        'order_id', 'tax_id',
+                        ], 100),
                 'sale.order': (
                     _get_solines_from_orders,
-                    ['date_order', 'pricelist_id'], 20),
+                    ['date_order', 'pricelist_id'], 100),
             }),
         'price_unit_company_currency': fields.function(
             __compute_amount_in_company_currency, multi='currencysoline',
@@ -99,10 +99,10 @@ class sale_order_line(orm.Model):
             string='Unit price in Company Currency', store={
                 'sale.order.line': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'order_id'], 10),
+                    ['price_unit', 'order_id'], 100),
                 'sale.order': (
                     _get_solines_from_orders,
-                    ['date_order', 'pricelist_id'], 20),
+                    ['date_order', 'pricelist_id'], 100),
                 }),
     }
 
@@ -157,13 +157,14 @@ class sale_order(orm.Model):
             string='Untaxed in Company Currency', store={
                 'sale.order': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['order_line', 'date_order', 'pricelist_id'], 20),
+                    ['order_line', 'date_order', 'pricelist_id'], 100),
                 'sale.order.line': (
                     _bi_get_sale_order_line, [
                         'price_unit',
                         'tax_id',
                         'product_uom_qty',
-                        'discount'], 20),
+                        'discount',
+                        'order_id'], 100),
             }),
         'amount_total_company_currency': fields.function(
             __compute_amount_in_company_currency, multi='currencyso',
@@ -171,13 +172,14 @@ class sale_order(orm.Model):
             string='Total in Company Currency', store={
                 'sale.order': (
                     lambda self, cr, uid, ids, c={}:
-                    ids, ['order_line', 'date_order', 'pricelist_id'], 20),
+                    ids, ['order_line', 'date_order', 'pricelist_id'], 100),
                 'sale.order.line': (
                     _bi_get_sale_order_line, [
                         'price_unit',
                         'tax_id',
                         'product_uom_qty',
-                        'discount'], 20),
+                        'discount',
+                        'order_id'], 100),
             }),
         'company_currency_id': fields.related(
             'company_id', 'currency_id', readonly=True, type='many2one',

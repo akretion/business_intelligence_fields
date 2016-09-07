@@ -86,10 +86,10 @@ class account_invoice_line(orm.Model):
                 'account.invoice.line': (
                     lambda self, cr, uid, ids, c={}: ids, [
                         'price_unit', 'quantity', 'discount',
-                        'invoice_id', 'invoice_line_tax_id'], 10),
+                        'invoice_id', 'invoice_line_tax_id'], 100),
                 'account.invoice': (
                     _get_invoice_lines_from_invoices,
-                    ['move_id', 'currency_id'], 20),
+                    ['move_id', 'currency_id'], 100),
             }),
         # In the trigger object for invalidation of these function
         # fields, why do I have accout.invoice -> move_id, and not
@@ -107,10 +107,10 @@ class account_invoice_line(orm.Model):
             string='Unit Price in Company Currency', store={
                 'account.invoice.line': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['price_unit', 'invoice_id'], 10),
+                    ['price_unit', 'invoice_id'], 100),
                 'account.invoice': (
                     _get_invoice_lines_from_invoices,
-                    ['move_id', 'currency_id'], 20),
+                    ['move_id', 'currency_id'], 100),
                 }),
     }
 
@@ -165,29 +165,36 @@ class account_invoice(orm.Model):
             string='Untaxed in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}: ids,
-                    ['invoice_line', 'currency_id'], 20),
-                'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
+                    ['invoice_line', 'currency_id'], 100),
+                'account.invoice.tax': (_bi_get_invoice_tax, None, 100),
                 'account.invoice.line': (
                     _bi_get_invoice_line, [
                         'price_unit',
                         'invoice_line_tax_id',
                         'quantity',
-                        'discount'], 20),
+                        'discount',
+                        'invoice_id'], 100),
             }),
+        # IMPORTANT: in the compute method, we use the 'amount_untaxed' field
+        # which is itself a stored function ; so it's important to have a higher
+        # priority for invalidation than the 'amount_untaxed' field to be sure
+        # that 'amount_untaxed' is recomputed BEFORE
+        # 'amount_untaxed_company_currency'
         'amount_total_company_currency': fields.function(
             _compute_amount_in_company_currency, multi='currencyinvoice',
             type='float', digits_compute=dp.get_precision('Account'),
             string='Total in Company Currency', store={
                 'account.invoice': (
                     lambda self, cr, uid, ids, c={}:
-                    ids, ['invoice_line', 'currency_id'], 20),
-                'account.invoice.tax': (_bi_get_invoice_tax, None, 20),
+                    ids, ['invoice_line', 'currency_id'], 100),
+                'account.invoice.tax': (_bi_get_invoice_tax, None, 100),
                 'account.invoice.line': (
                     _bi_get_invoice_line, [
                         'price_unit',
                         'invoice_line_tax_id',
                         'quantity',
-                        'discount'], 20),
+                        'discount',
+                        'invoice_id'], 100),
             }),
         'company_currency_id': fields.related(
             'company_id', 'currency_id', readonly=True, type='many2one',

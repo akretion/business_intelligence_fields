@@ -138,34 +138,34 @@ class account_invoice(orm.Model):
         'date_final_payment': fields.function(
             _compute_bi_payment, multi='bipay', type='date',
             string='Final payment date', store={
-                'account.move.line': (_bi_get_invoice_from_line, None, 50),
-                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+                'account.move.line': (_bi_get_invoice_from_line, None, 100),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 100),
             }),
         'payment_delay_days': fields.function(
             _compute_bi_payment, multi='bipay', type='integer',
             string='Payment delay in days', store={
-                'account.move.line': (_bi_get_invoice_from_line, None, 50),
-                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+                'account.move.line': (_bi_get_invoice_from_line, None, 100),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 100),
             }),
         'overdue_delay_days': fields.function(
             _compute_bi_payment, multi='bipay', type='integer',
             string='Overdue delay in days', store={
-                'account.move.line': (_bi_get_invoice_from_line, None, 50),
-                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+                'account.move.line': (_bi_get_invoice_from_line, None, 100),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 100),
             }),
         'total_down_payment_company_currency': fields.function(
             _compute_bi_payment, multi='bipay', type='float',
             digits_compute=dp.get_precision('Account'),
             string='Total down payment in company currency', store={
-                'account.move.line': (_bi_get_invoice_from_line, None, 50),
-                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+                'account.move.line': (_bi_get_invoice_from_line, None, 100),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 100),
             }),
         'payment_journal_id': fields.function(
             _compute_bi_payment, multi='bipay',
             type='many2one', relation='account.journal',
             string='Payment journal', help="Journal of the first payment line.",
             store={
-                'account.move.line': (_bi_get_invoice_from_line, None, 50),
-                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 50),
+                'account.move.line': (_bi_get_invoice_from_line, None, 100),
+                'account.move.reconcile': (_bi_get_invoice_from_reconcile, None, 100),
             }),
     }

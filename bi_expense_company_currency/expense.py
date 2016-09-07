@@ -78,21 +78,18 @@ class hr_expense_line(osv.osv):
 
     _columns = {
         'total_amount_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Total amount in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
+            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 100),
+            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 100),
+            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 100),
             }),
         'amount_untaxed_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Total untaxed in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
+            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'unit_quantity', 'expense_id', 'product_id'], 100),
+            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 100),
+            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 100),
             }),
         'unit_amount_company_currency': fields.function(_compute_amount_in_company_currency, multi='currencyexpline', type='float', digits_compute=dp.get_precision('Account'), string='Unit price in company currency', store={
-            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'expense_id', 'product_id'], 10),
-            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 20),
-            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 30),
+            'hr.expense.line': (lambda self, cr, uid, ids, c={}: ids, ['unit_amount', 'expense_id', 'product_id'], 100),
+            'hr.expense.expense': (_get_expense_lines_from_expenses, ['currency_id', 'date'], 100),
+            'res.currency.rate': (_get_expense_lines_from_currency_rates, ['name', 'rate', 'currency_id'], 100),
             }),
     }
-
-hr_expense_line()
-
