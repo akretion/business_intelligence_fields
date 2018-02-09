@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-#    bi_saiku_user_properties module for OpenERP
-#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
+#    bi_time_dimension module for Odoo
+#    Copyright (C) 2013-2016 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,4 +20,23 @@
 #
 ##############################################################################
 
-from . import saiku_user_properties
+
+{
+    'name': 'Business intelligence - Time dimension',
+    'summary': 'Generate time dimension table for BI',
+    'version': '0.1',
+    'category': 'Tools',
+    'license': 'AGPL-3',
+    'description': """This module adds a wizard to generate the time dimension for business intelligence.
+
+By default, it will create the time dimension table in the Odoo database. If you have a bi_dsn entry in your Odoo server configuration file, it will create a time dimension table in the designated external database.
+
+This module has been written by Alexis de Lattre from Akretion
+<alexis.delattre@akretion.com>.
+""",
+    'author': 'Akretion',
+    'website': 'http://www.akretion.com/',
+    'depends': ['base'],
+    'data': ['wizard/generate_time_dimension_view.xml'],
+    'installable': False,
+}

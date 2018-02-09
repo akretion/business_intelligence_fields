@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_invoice_payment module for OpenERP
-#    Copyright (C) 2011-2014 Akretion (http://www.akretion.com)
+#    bi_invoice_company_currency module for Odoo
+#    Copyright (C) 2011-2015 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,16 +22,29 @@
 
 
 {
-    'name': 'Business intelligence - Invoice payment',
+    'name': 'Business intelligence - Invoice in company currency',
     'version': '0.2',
+    'summary': 'Adds fields on invoice and invoice lines for business intelligence',
     'category': 'Accounting & Finance',
     'license': 'AGPL-3',
-    'description': """This module adds some fields required to do business intelligence on the payment of invoices :
-it adds the final payment date and the total amount of down payment on the invoices.""",
+    'description': """
+BI Invoice Company Currency
+===========================
+
+This modules adds several stored computed fields:
+
+* on invoice line: price_subtotal_company_currency and price_unit_company_currency
+
+* in invoice: amount_untaxed_company_currency and amount_total_company_currency
+
+This module also replaces the object *account.invoice.report* (used by the menu entry *Reporting > Accounting > Invoice Analysis*) by another object *account.invoice.report.bi* that uses the new stored computed fields.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
     'depends': ['account'],
-    'data': ['invoice_view.xml'],
-    'installable': True,
-    'active': False,
+    'data': [
+        'invoice_view.xml',
+        'report/invoice_report_view.xml',
+        'security/ir.model.access.csv',
+        ],
+    'installable': False,
 }

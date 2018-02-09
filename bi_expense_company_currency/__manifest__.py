@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_saiku_user_properties module for OpenERP
-#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
+#    bi_expense_company_currency module for Odoo
+#    Copyright (C) 2012-2015 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,22 +22,15 @@
 
 
 {
-    'name': 'Business Intelligence - Saiku User Properties',
-    'version': '0.1',
-    'category': 'Business Intelligence',
+    'name': 'Business intelligence - Expense in company currency',
+    'version': '0.2',
+    'category': 'Human Resources',
     'license': 'AGPL-3',
-    'description': """This module generates the user.properties file of Saiku from the OpenERP login and passwords.
-
-Please contact Alexis de Lattre from Akretion <alexis.delattre@akretion.com> for any help or question about this module.
-""",
+    'description': """This module adds some fields required to do business intelligence :
+it adds the amount in company currency on the expense lines.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
-    'depends': ['base'],
-    'data': [
-        'security/bi_group.xml',
-        'saiku_user_properties_cron.xml',
-        'saiku_user_properties_data.xml',
-        ],
-    'installable': True,
-    'active': False,
+    'depends': ['hr_expense', 'hr_expense_show_taxes'],
+    'data': ['hr_expense_view.xml'],
+    'installable': False,
 }

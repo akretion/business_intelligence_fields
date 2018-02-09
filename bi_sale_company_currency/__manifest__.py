@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_partner module for OpenERP
-#    Copyright (C) 2013 Akretion (http://www.akretion.com). All Rights Reserved
+#    bi_sale_company_currency module for Odoo
+#    Copyright (C) 2011-2015 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,20 +22,19 @@
 
 
 {
-    'name': 'Business intelligence - Partner',
-    'version': '0.1',
-    'category': 'Generic Modules/Others',
+    'name': 'Business intelligence - Sale Order in company currency',
+    'version': '0.2',
+    'category': 'Sales Management',
     'license': 'AGPL-3',
-    'complexity': 'easy',
-    'description': """This module stores some fields required to do business intelligence :
-it stores the field 'country' of res_partner in the database.""",
+    'description': """This module adds some fields required to do business intelligence :
+it adds the amount in company currency on the sale order lines.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
-    'depends': ['base'],
-    'init_xml': [],
-    'update_xml': [],
-    'demo_xml': [],
-    'installable': True,
-    'active': False,
+    'depends': ['sale'],
+    'data': [
+        'sale_view.xml',
+        'report/sale_report_view.xml',
+        'security/ir.model.access.csv',
+        ],
+    'installable': False,
 }
-

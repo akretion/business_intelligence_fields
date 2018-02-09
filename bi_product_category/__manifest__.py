@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #
-#    bi_purchase_company_currency module for Odoo
-#    Copyright (C) 2011-2015 Akretion (http://www.akretion.com)
+#    bi_product_category module for OpenERP
+#    Copyright (C) 2013-2014 Akretion (http://www.akretion.com)
 #    @author Alexis de Lattre <alexis.delattre@akretion.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,15 +22,15 @@
 
 
 {
-    'name': 'Business intelligence - Purchase Order in company currency',
-    'version': '0.2',
-    'category': 'Purchase Management',
+    'name': 'Business Intelligence - Product category',
+    'version': '0.1',
+    'category': 'Business Intelligence',
     'license': 'AGPL-3',
     'description': """This module adds some fields required to do business intelligence :
-it adds the amount in company currency on the purchase order and purchase order lines.""",
+it adds the different levels of hierarchy on product categories and stores in the database their complete name.""",
     'author': 'Akretion',
     'website': 'http://www.akretion.com/',
-    'depends': ['purchase'],
-    'data': ['purchase_view.xml'],
-    'installable': True,
+    'depends': ['product'],
+    'data': [],
+    'installable': False,
 }
