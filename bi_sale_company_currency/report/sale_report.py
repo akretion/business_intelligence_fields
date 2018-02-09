@@ -20,6 +20,8 @@
 #
 ##############################################################################
 
+# NOT PORTED TO v10 for the moment... we'll see if we need it
+
 from openerp import models, fields, tools
 import openerp.addons.decimal_precision as dp
 
