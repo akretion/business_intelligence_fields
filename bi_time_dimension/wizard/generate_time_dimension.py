@@ -1,27 +1,11 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-#    bi_time_dimension module for Odoo
-#    Copyright (C) 2013-2016 Akretion (http://www.akretion.com)
-#    @author Alexis de Lattre <alexis.delattre@akretion.com>
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
+# Copyright (C) 2013-2018 Akretion (http://www.akretion.com)
+# @author Alexis de Lattre <alexis.delattre@akretion.com>
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from openerp import models, fields, api, tools, _
-from openerp.exceptions import ValidationError
+
+from odoo import models, fields, api, tools, _
+from odoo.exceptions import ValidationError, UserError
 import logging
 from dateutil.relativedelta import relativedelta
 import psycopg2
@@ -37,17 +21,18 @@ class GenerateTimeDimension(models.TransientModel):
     start_date = fields.Date(string='Start date', required=True)
     end_date = fields.Date(string='End date', required=True)
 
-    @api.one
     @api.constrains('start_date', 'end_date')
     def _start_before_end(self):
-        if self.start_date >= self.end_date:
-            raise ValidationError(_(
-                "Start date must be before end date"))
+        for wiz in self:
+            if wiz.start_date >= wiz.end_date:
+                raise ValidationError(_(
+                    "Start date must be before end date"))
 
-    @api.multi
     def generate_table(self):
         self.ensure_one()
         bi_dsn = tools.config.get('bi_dsn')
+        if not bi_dsn:
+            raise UserError(_("Missing bi_dsn key in Odoo server config file"))
         # bi_dsn should somethink like:
         # host='192.168.12.42' dbname='bi' user='odoo' password='azerty'
         if bi_dsn:
@@ -65,7 +50,6 @@ class GenerateTimeDimension(models.TransientModel):
         table_cols = [
             {'name': 'date',     'dbtype': 'DATE PRIMARY KEY'},
             {'name': 'year',     'dbtype': 'VARCHAR(4) NOT NULL'},
-            {'name': 'fiscal_year', 'dbtype': 'VARCHAR(9) NOT NULL'},
             {'name': 'semester', 'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'quarter',  'dbtype': 'VARCHAR(7) NOT NULL'},
             {'name': 'month',    'dbtype': 'VARCHAR(7) NOT NULL'},
@@ -97,10 +81,6 @@ class GenerateTimeDimension(models.TransientModel):
 
         cur_date = start_date
         list_values = []
-        afo = self.env['account.fiscalyear']
-        fy_idtocode = {}
-        for fy in afo.search([]):
-            fy_idtocode[fy.id] = fy.code
         while cur_date <= end_date:
             # logger.debug("Current date = %s", cur_date)
             # date as timestamp
@@ -126,15 +106,12 @@ class GenerateTimeDimension(models.TransientModel):
                 cur_date.strftime('%Y'), compute[month_str]['semester'])
             quarter = '%s-%s' % (
                 cur_date.strftime('%Y'), compute[month_str]['quarter'])
-            cur_date_str = fields.Date.to_string(cur_date)
-            fyear_id = afo.find(dt=cur_date_str, exception=False)
             year_str = cur_date.strftime('%Y')
             week_str = unicode(cur_date.isocalendar()[1]).zfill(2)
 
             list_values.append({
                 'date': cur_date.strftime('%Y-%m-%d'),
                 'year': year_str,
-                'fiscal_year': fyear_id and fy_idtocode[fyear_id] or False,
                 'semester': semester,
                 'quarter': quarter,
                 'month': cur_date.strftime('%Y-%m'),
@@ -149,7 +126,7 @@ class GenerateTimeDimension(models.TransientModel):
         # pprint(list_values)
         query_insert_date = 'INSERT INTO %s (%s) VALUES (%s)' % (
             TIME_DIMENSION_TABLE, list_cols,
-            '%(date)s, %(year)s, %(fiscal_year)s, %(semester)s, '
+            '%(date)s, %(year)s, %(semester)s, '
             '%(quarter)s, %(month)s, %(week)s, %(day)s'
             )
         logger.debug('Insert into queries: %s' % query_insert_date)
