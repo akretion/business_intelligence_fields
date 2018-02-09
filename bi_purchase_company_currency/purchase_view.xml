@@ -19,8 +19,8 @@
             <field name="amount_total_company_currency" groups="base.group_no_one"/>
         </field>
         <xpath expr="//field[@name='order_line']/tree/field[@name='price_subtotal']" position="after">
-            <field name="price_subtotal_company_currency" groups="base.group_no_one"/>
-            <field name="price_unit_company_currency" groups="base.group_no_one"/>
+            <field name="price_subtotal_company_currency" groups="base.group_no_one" string="Subtotal Comp. Cur."/>
+            <field name="price_unit_company_currency" groups="base.group_no_one" string="Price Comp. Cur."/>
             <field name="company_currency_id" invisible="1"/>
         </xpath>
     </field>

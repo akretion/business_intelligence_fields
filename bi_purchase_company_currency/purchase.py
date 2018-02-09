@@ -19,17 +19,14 @@ class PurchaseOrderLine(models.Model):
             price_subtotal_cc = 0.0
             price_unit_cc = 0.0
             if line.order_id:
-                order_cur = line.order_id.currency_id
-                company_cur = line.order_id.company_id.currency_id
-                date = line.order_id.date_order
-                price_subtotal_cc = order_cur.with_context(
-                    date=date,
-                    disable_rate_date_check=True).compute(
-                        line.price_subtotal, company_cur)
-                price_unit_cc = order_cur.with_context(
+                order_cur = line.order_id.currency_id.with_context(
                     date=line.order_id.date_order,
-                    disable_rate_date_check=True).compute(
-                        line.price_unit, company_cur)
+                    disable_rate_date_check=True)
+                company_cur = line.order_id.company_id.currency_id
+                price_subtotal_cc = order_cur.compute(
+                    line.price_subtotal, company_cur)
+                price_unit_cc = order_cur.compute(
+                    line.price_unit, company_cur)
             line.price_subtotal_company_currency = price_subtotal_cc
             line.price_unit_company_currency = price_unit_cc
 
@@ -54,15 +51,13 @@ class PurchaseOrder(models.Model):
         'amount_total')
     def _compute_amount_in_company_currency(self):
         for order in self:
-            order_cur = order.currency_id
+            order_cur = order.currency_id.with_context(
+                date=order.date_order, disable_rate_date_check=True)
             company_cur = order.company_id.currency_id
-            date = order.date_order
-            order.amount_untaxed_company_currency = order_cur.with_context(
-                date=date, disable_rate_date_check=True).compute(
-                    order.amount_untaxed, company_cur)
-            order.amount_total_company_currency = order_cur.with_context(
-                date=date, disable_rate_date_check=True).compute(
-                    order.amount_total, company_cur)
+            order.amount_untaxed_company_currency = order_cur.compute(
+                order.amount_untaxed, company_cur)
+            order.amount_total_company_currency = order_cur.compute(
+                order.amount_total, company_cur)
 
     amount_untaxed_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',

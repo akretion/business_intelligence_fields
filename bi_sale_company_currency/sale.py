@@ -21,15 +21,15 @@ class SaleOrderLine(models.Model):
             # (if the SO is created by code and the code create lines first
             # and then the sale.order
             if line.order_id and line.order_id.pricelist_id.currency_id:
-                order_cur = line.order_id.pricelist_id.currency_id
+                order_cur = line.order_id.pricelist_id.currency_id.\
+                    with_context(
+                        date=line.order_id.date_order,
+                        disable_rate_date_check=True)
                 company_cur = line.order_id.company_id.currency_id
-                date = line.order_id.date_order
-                price_subtotal_cc = order_cur.with_context(
-                    date=date, disable_rate_date_check=True).compute(
-                        line.price_subtotal, company_cur)
-                price_unit_cc = order_cur.with_context(
-                    date=date, disable_rate_date_check=True).compute(
-                        line.price_unit, company_cur)
+                price_subtotal_cc = order_cur.compute(
+                    line.price_subtotal, company_cur)
+                price_unit_cc = order_cur.compute(
+                    line.price_unit, company_cur)
             line.price_subtotal_company_currency = price_subtotal_cc
             line.price_unit_company_currency = price_unit_cc
 
@@ -57,15 +57,13 @@ class SaleOrder(models.Model):
             amount_untaxed_cc = 0.0
             amount_total_cc = 0.0
             if order.pricelist_id.currency_id:
-                order_cur = order.pricelist_id.currency_id
+                order_cur = order.pricelist_id.currency_id.with_context(
+                    date=order.date_order, disable_rate_date_check=True)
                 company_cur = order.company_id.currency_id
-                date = order.date_order
-                amount_untaxed_cc = order_cur.with_context(
-                    date=date, disable_rate_date_check=True).compute(
-                        order.amount_untaxed, company_cur)
-                amount_total_cc = order_cur.with_context(
-                    date=date, disable_rate_date_check=True).compute(
-                        order.amount_total, company_cur)
+                amount_untaxed_cc = order_cur.compute(
+                    order.amount_untaxed, company_cur)
+                amount_total_cc = order_cur.compute(
+                    order.amount_total, company_cur)
             order.amount_untaxed_company_currency = amount_untaxed_cc
             order.amount_total_company_currency = amount_total_cc
 
