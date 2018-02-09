@@ -1,86 +1,77 @@
-# -*- encoding: utf-8 -*-
-##############################################################################
-#
-#    bi_purchase_company_currency module for Odoo
-#    Copyright (C) 2014-2015 Akretion (http://www.akretion.com/)
-#    @author Alexis de Lattre <alexis.delattre@akretion.com>
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014-2018 Akretion (http://www.akretion.com/)
+# @author Alexis de Lattre <alexis.delattre@akretion.com>
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from openerp import models, fields, api
-import openerp.addons.decimal_precision as dp
+
+from odoo import models, fields, api
+import odoo.addons.decimal_precision as dp
 
 
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
-    @api.one
     @api.depends(
         'order_id.currency_id', 'order_id.date_order', 'order_id.company_id',
         'price_unit', 'price_subtotal')
     def _compute_amount_in_company_currency(self):
-        price_subtotal_cc = 0.0
-        price_unit_cc = 0.0
-        if self.order_id:
-            price_subtotal_cc = self.order_id.currency_id.with_context(
-                date=self.order_id.date_order,
-                disable_rate_date_check=True).compute(
-                    self.price_subtotal,
-                    self.order_id.company_id.currency_id)
-            price_unit_cc = self.order_id.currency_id.with_context(
-                date=self.order_id.date_order,
-                disable_rate_date_check=True).compute(
-                    self.price_unit,
-                    self.order_id.company_id.currency_id)
-        self.price_subtotal_company_currency = price_subtotal_cc
-        self.price_unit_company_currency = price_unit_cc
+        for line in self:
+            price_subtotal_cc = 0.0
+            price_unit_cc = 0.0
+            if line.order_id:
+                order_cur = line.order_id.currency_id
+                company_cur = line.order_id.company_id.currency_id
+                date = line.order_id.date_order
+                price_subtotal_cc = order_cur.with_context(
+                    date=date,
+                    disable_rate_date_check=True).compute(
+                        line.price_subtotal, company_cur)
+                price_unit_cc = order_cur.with_context(
+                    date=line.order_id.date_order,
+                    disable_rate_date_check=True).compute(
+                        line.price_unit, company_cur)
+            line.price_subtotal_company_currency = price_subtotal_cc
+            line.price_unit_company_currency = price_unit_cc
 
-    price_subtotal_company_currency = fields.Float(
+    company_currency_id = fields.Many2one(
+        related='order_id.company_id.currency_id',
+        readonly=True, store=True, string='Company Currency')
+    price_subtotal_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
-        digits=dp.get_precision('Account'),
-        string='Subtotal in Company Currency', store=True)
+        currency_field='company_currency_id',
+        string='Subtotal in Company Currency', store=True, readonly=True)
     price_unit_company_currency = fields.Float(
         compute='_compute_amount_in_company_currency',
         digits=dp.get_precision('Product Price'),
-        string='Unit price in Company Currency', store=True)
+        string='Unit price in Company Currency', store=True, readonly=True)
 
 
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
-    @api.one
     @api.depends(
         'currency_id', 'date_order', 'company_id', 'amount_untaxed',
         'amount_total')
     def _compute_amount_in_company_currency(self):
-        self.amount_untaxed_company_currency = self.currency_id.with_context(
-            date=self.date_order, disable_rate_date_check=True).compute(
-                self.amount_untaxed, self.company_id.currency_id)
-        self.amount_total_company_currency = self.currency_id.with_context(
-            date=self.date_order, disable_rate_date_check=True).compute(
-                self.amount_total, self.company_id.currency_id)
+        for order in self:
+            order_cur = order.currency_id
+            company_cur = order.company_id.currency_id
+            date = order.date_order
+            order.amount_untaxed_company_currency = order_cur.with_context(
+                date=date, disable_rate_date_check=True).compute(
+                    order.amount_untaxed, company_cur)
+            order.amount_total_company_currency = order_cur.with_context(
+                date=date, disable_rate_date_check=True).compute(
+                    order.amount_total, company_cur)
 
-    amount_untaxed_company_currency = fields.Float(
+    amount_untaxed_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
-        digits=dp.get_precision('Account'),
-        string='Untaxed in Company Currency', store=True)
-    amount_total_company_currency = fields.Float(
+        currency_field='company_currency_id',
+        string='Untaxed in Company Currency', store=True, readonly=True)
+    amount_total_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
-        digits=dp.get_precision('Account'),
-        string='Total in Company Currency', store=True)
+        currency_field='company_currency_id',
+        string='Total in Company Currency', store=True, readonly=True)
     company_currency_id = fields.Many2one(
-        'res.currency', related='company_id.currency_id', readonly=True,
+        related='company_id.currency_id', readonly=True, store=True,
         string="Company Currency")
