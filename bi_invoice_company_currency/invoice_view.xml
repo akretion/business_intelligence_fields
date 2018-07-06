@@ -13,10 +13,6 @@
     <field name="model">account.invoice</field>
     <field name="inherit_id" ref="account.invoice_form" />
     <field name="arch" type="xml">
-        <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='currency_id']" position="after">
-            <field name="price_subtotal_signed" groups="base.group_no_one" string="Amount in Comp. Cur."/>
-            <field name="company_currency_id" invisible="1"/>
-        </xpath>
         <xpath expr="//page/group/group/field[@name='name']" position="after">
             <field name="amount_untaxed_signed"/>
             <field name="amount_total_company_signed"/>
@@ -30,10 +26,6 @@
     <field name="model">account.invoice</field>
     <field name="inherit_id" ref="account.invoice_supplier_form" />
     <field name="arch" type="xml">
-        <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='currency_id']" position="after">
-            <field name="price_subtotal_signed" groups="base.group_no_one" string="Amount in Comp. Cur."/>
-            <field name="company_currency_id" invisible="1"/>
-        </xpath>
         <xpath expr="//page/group/group/field[@name='company_id']" position="after">
             <field name="amount_untaxed_signed"/>
             <field name="amount_total_company_signed"/>
@@ -41,5 +33,17 @@
     </field>
 </record>
 
+<record id="view_invoice_line_form" model="ir.ui.view">
+    <field name="name">bi.invoice.cc.invoice.line.form</field>
+    <field name="model">account.invoice.line</field>
+    <field name="inherit_id" ref="account.view_invoice_line_form"/>
+    <field name="arch" type="xml">
+        <field name="company_id" position="after">
+            <field name="price_unit_company_currency" groups="base.group_no_one"/>
+            <field name="price_subtotal_signed" groups="base.group_no_one" string="Subtotal in Company Currency"/>
+            <field name="company_currency_id" invisible="1"/>
+        </field>
+    </field>
+</record>
 
 </odoo>
