@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2011-2018 Akretion (http://www.akretion.com)
+# Copyright (C) 2011-2019 Akretion France (http://www.akretion.com)
 # @author Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
     'name': 'Business intelligence - Sale Order in company currency',
-    'version': '10.0.1.0.0',
+    'version': '12.0.1.0.0',
     'category': 'Sales',
     'license': 'AGPL-3',
     'summary': 'Adds fields in company currency on sale orders and lines',
@@ -16,7 +15,7 @@ it adds the amount in company currency on the sale order and sale order lines.""
     'depends': ['sale'],
     'data': [
         'sale_view.xml',
-        # The sale.report part hasn't been ported to v10 so far
+        # The sale.report part hasn't been ported to v10/v12 so far
         # We'll see if we need it
         # 'report/sale_report_view.xml',
         # 'security/ir.model.access.csv',

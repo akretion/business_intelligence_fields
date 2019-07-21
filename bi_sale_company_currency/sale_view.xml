@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Copyright (C) 2014-2018 Akretion (http://www.akretion.com/)
+  Copyright (C) 2014-2019 Akretion France (http://www.akretion.com/)
   @author Alexis de Lattre <alexis.delattre@akretion.com>
   License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 -->
@@ -13,14 +13,14 @@
     <field name="model">sale.order</field>
     <field name="inherit_id" ref="sale.view_order_form" />
     <field name="arch" type="xml">
-        <field name="origin" position="after">
+        <group name="technical" position="inside">
             <field name="company_currency_id" invisible="1"/>
-            <field name="amount_untaxed_company_currency"/>
-            <field name="amount_total_company_currency"/>
-        </field>
+            <field name="amount_untaxed_company_currency" groups="base.group_multi_currency"/>
+            <field name="amount_total_company_currency" groups="base.group_multi_currency"/>
+        </group>
         <xpath expr="//field[@name='order_line']/form//field[@name='analytic_tag_ids']/.." position="after">
-            <field name="price_subtotal_company_currency" groups="base.group_no_one"/>
-            <field name="price_unit_company_currency" groups="base.group_no_one"/>
+            <field name="price_subtotal_company_currency" groups="base.group_multi_currency"/>
+            <field name="price_unit_company_currency" groups="base.group_multi_currency"/>
             <field name="company_currency_id" invisible="1"/>
         </xpath>
     </field>
@@ -32,7 +32,7 @@
     <field name="inherit_id" ref="sale.view_order_line_tree" />
     <field name="arch" type="xml">
         <field name="price_subtotal" position="after">
-            <field name="price_subtotal_company_currency" sum="1"/>
+            <field name="price_subtotal_company_currency" sum="1" groups="base.group_multi_currency"/>
             <field name="company_currency_id" invisible="1"/>
         </field>
     </field>

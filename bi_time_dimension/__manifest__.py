@@ -20,5 +20,5 @@ This module has been written by Alexis de Lattre from Akretion
     'website': 'http://www.akretion.com/',
     'depends': ['base'],
     'data': ['wizard/generate_time_dimension_view.xml'],
-    'installable': True,
+    'installable': False,
 }

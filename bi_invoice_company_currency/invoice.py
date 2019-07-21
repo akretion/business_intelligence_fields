@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2011-2018 Akretion (http://www.akretion.com/)
+# Copyright (C) 2011-2019 Akretion France (http://www.akretion.com/)
 # @author Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
@@ -25,13 +24,13 @@ class AccountInvoiceLine(models.Model):
     def _compute_amount_in_company_currency(self):
         for line in self:
             price_unit_cc = 0.0
-            if line.invoice_id:
-                # Convert on the date of the invoice
-                price_unit_cc = line.invoice_id.currency_id.with_context(
-                    date=line.invoice_id.date_invoice,
-                    disable_rate_date_check=True).compute(
-                        line.price_unit,
-                        line.invoice_id.company_id.currency_id)
+            inv = line.invoice_id
+            if inv:
+                date = inv._get_currency_rate_date() or\
+                    fields.Date.context_today(self)
+                price_unit_cc = line.invoice_id.currency_id._convert(
+                    line.price_unit, inv.company_id.currency_id,
+                    inv.company_id, date)
             line.price_unit_company_currency = price_unit_cc
 
     company_currency_id = fields.Many2one(store=True)
