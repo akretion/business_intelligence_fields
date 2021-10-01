@@ -1,16 +1,15 @@
-# Copyright (C) 2014-2019 Akretion France (http://www.akretion.com/)
+# Copyright 2014-2021 Akretion France (http://www.akretion.com/)
 # @author Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields, api
-import odoo.addons.decimal_precision as dp
 
 
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
     @api.depends(
-        'order_id.pricelist_id.currency_id', 'order_id.confirmation_date',
+        'order_id.pricelist_id.currency_id',
         'order_id.date_order', 'order_id.company_id', 'price_unit',
         'price_subtotal')
     def _compute_amount_in_company_currency(self):
@@ -21,10 +20,8 @@ class SaleOrderLine(models.Model):
             # (if the SO is created by code and the code create lines first
             # and then the sale.order
             order_cur = line.order_id.pricelist_id.currency_id
-            if order_cur:
-                date = line.order_id.confirmation_date and\
-                    fields.Date.to_date(line.order_id.confirmation_date) or\
-                    fields.Date.to_date(line.order_id.date_order)
+            if order_cur and not line.display_type:
+                date = fields.Date.to_date(line.order_id.date_order)
                 company = line.order_id.company_id
                 company_cur = company.currency_id
                 price_subtotal_cc = order_cur._convert(
@@ -40,18 +37,18 @@ class SaleOrderLine(models.Model):
     price_subtotal_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
         currency_field='company_currency_id',
-        string='Subtotal in Company Currency', store=True, readonly=True)
+        string='Subtotal in Company Currency', store=True)
     price_unit_company_currency = fields.Float(
         compute='_compute_amount_in_company_currency',
-        digits=dp.get_precision('Product Price'),
-        string='Unit price in Company Currency', store=True, readonly=True)
+        digits='Product Price',
+        string='Unit price in Company Currency', store=True)
 
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     @api.depends(
-        'pricelist_id.currency_id', 'confirmation_date', 'date_order',
+        'pricelist_id.currency_id', 'date_order',
         'amount_untaxed', 'amount_total', 'company_id')
     def _compute_amount_in_company_currency(self):
         for order in self:
@@ -59,9 +56,7 @@ class SaleOrder(models.Model):
             amount_total_cc = 0.0
             order_cur = order.pricelist_id.currency_id
             if order_cur:
-                date = order.confirmation_date and\
-                    fields.Date.to_date(order.confirmation_date) or\
-                    fields.Date.to_date(order.date_order)
+                date = fields.Date.to_date(order.date_order)
                 company = order.company_id
                 company_cur = company.currency_id
                 amount_untaxed_cc = order_cur._convert(
@@ -77,8 +72,8 @@ class SaleOrder(models.Model):
     amount_untaxed_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
         currency_field='company_currency_id',
-        string='Untaxed in Company Currency', store=True, readonly=True)
+        string='Untaxed in Company Currency', store=True)
     amount_total_company_currency = fields.Monetary(
         compute='_compute_amount_in_company_currency',
         currency_field='company_currency_id',
-        string='Total in Company Currency', store=True, readonly=True)
+        string='Total in Company Currency', store=True)

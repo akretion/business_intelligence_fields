@@ -1,2 +1,1 @@
-from . import sale
-from . import report
+from . import models

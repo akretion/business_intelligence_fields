@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2014-2021 Akretion France (http://www.akretion.com/)
+  @author Alexis de Lattre <alexis.delattre@akretion.com>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+
+<odoo>
+
+<record id="purchase_order_tree" model="ir.ui.view">
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_tree" />
+    <field name="arch" type="xml">
+        <field name="amount_untaxed" position="after">
+            <field name="amount_untaxed_company_currency" groups="base.group_multi_currency" optional="hide" sum="1"/>
+            <field name="company_currency_id" invisible="1"/>
+        </field>
+        <field name="amount_total" position="after">
+            <field name="amount_total_company_currency" groups="base.group_multi_currency" optional="hide" sum="1" decoration-bf="1"/>
+        </field>
+    </field>
+</record>
+
+<record id="purchase_order_kpis_tree" model="ir.ui.view">
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_kpis_tree" />
+    <field name="arch" type="xml">
+        <field name="amount_untaxed" position="after">
+            <field name="amount_untaxed_company_currency" groups="base.group_multi_currency" optional="hide" sum="1"/>
+            <field name="company_currency_id" invisible="1"/>
+        </field>
+        <field name="amount_total" position="after">
+            <field name="amount_total_company_currency" groups="base.group_multi_currency" optional="hide" sum="1" decoration-bf="1"/>
+        </field>
+    </field>
+</record>
+
+
+<record id="purchase_order_view_tree" model="ir.ui.view">
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_view_tree" />
+    <field name="arch" type="xml">
+        <field name="amount_untaxed" position="after">
+            <field name="amount_untaxed_company_currency" groups="base.group_multi_currency" optional="hide" sum="1"/>
+            <field name="company_currency_id" invisible="1"/>
+        </field>
+        <field name="amount_total" position="after">
+            <field name="amount_total_company_currency" groups="base.group_multi_currency" optional="hide" sum="1" decoration-bf="1"/>
+        </field>
+    </field>
+</record>
+
+<record id="purchase_order_line_tree" model="ir.ui.view">
+    <field name="model">purchase.order.line</field>
+    <field name="inherit_id" ref="purchase.purchase_order_line_tree" />
+    <field name="arch" type="xml">
+        <field name="price_subtotal" position="after">
+            <field name="price_subtotal_company_currency" optional="hide"/>
+            <field name="price_unit_company_currency" optional="hide"/>
+            <field name="company_currency_id" invisible="1"/>
+        </field>
+    </field>
+</record>
+
+<record id="purchase_order_form" model="ir.ui.view">
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_form" />
+    <field name="arch" type="xml">
+        <field name="fiscal_position_id" position="after">
+            <field name="company_currency_id" invisible="1"/>
+            <field name="amount_untaxed_company_currency" groups="base.group_multi_currency"/>
+            <field name="amount_total_company_currency" groups="base.group_multi_currency"/>
+        </field>
+        <xpath expr="//field[@name='order_line']/tree/field[@name='price_subtotal']" position="after">
+            <field name="price_subtotal_company_currency" optional="hide"/>
+            <field name="price_unit_company_currency" optional="hide"/>
+            <field name="company_currency_id" invisible="1"/>
+        </xpath>
+    </field>
+</record>
+
+
+</odoo>
